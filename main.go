@@ -22,6 +22,7 @@ import (
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
+
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 
@@ -37,8 +38,6 @@ import (
 
 	api "github.com/converged-computing/oras-operator/api/v1alpha1"
 	controllers "github.com/converged-computing/oras-operator/controllers/oras"
-	podhook "github.com/converged-computing/oras-operator/pkg/webhook"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -131,11 +130,19 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "OrasCache")
 		os.Exit(1)
 	}
-	//	if err = (&api.OrasCache{}).SetupWebhookWithManager(mgr); err != nil {
-	//		setupLog.Error(err, "unable to create webhook", "webhook", "OrasCache")
-	//		os.Exit(1)
-	//	}
-	mgr.GetWebhookServer().Register("/mutate-v1-pod", &webhook.Admission{Handler: &podhook.PodInjector{Client: mgr.GetClient()}})
+	if err = (&api.OrasCache{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "OrasCache")
+		os.Exit(1)
+	}
+	//mgr.GetWebhookServer().Register("/mutate-v1-pod", &webhook.Admission{Handler: &podhook.PodInjector{Client: mgr.GetClient()}})
+	//if err := builder.WebhookManagedBy(mgr).
+	//	For(&corev1.Pod{}).
+	//	WithDefaulter(&webhook.PodInjector{}).
+	//	//WithValidator(&podValidator{}).
+	//	Complete(); err != nil {
+	//	setupLog.Error(err, "unable to create webhook", "webhook", "Pod")
+	//	os.Exit(1)
+	//}
 
 	//+kubebuilder:scaffold:builder
 

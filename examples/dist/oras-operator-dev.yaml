@@ -140,33 +140,6 @@ rules:
   - update
   - watch
 - apiGroups:
-  - ""
-  resources:
-  - secrets
-  verbs:
-  - get
-  - list
-  - update
-  - watch
-- apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - mutatingwebhookconfigurations
-  verbs:
-  - get
-  - list
-  - update
-  - watch
-- apiGroups:
-  - admissionregistration.k8s.io
-  resources:
-  - validatingwebhookconfigurations
-  verbs:
-  - get
-  - list
-  - update
-  - watch
-- apiGroups:
   - apps
   resources:
   - statefulsets
@@ -670,29 +643,9 @@ webhooks:
     service:
       name: oras-operator-webhook-service
       namespace: oras-operator-system
-      path: /mutate-cache-converged-computing-github-io-v1alpha1-orascache
+      path: /mutate--v1-pod
   failurePolicy: Fail
   name: morascache.kb.io
-  rules:
-  - apiGroups:
-    - ""
-    apiVersions:
-    - v1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - pods
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: oras-operator-webhook-service
-      namespace: oras-operator-system
-      path: /mutate-v1-pod
-  failurePolicy: Fail
-  name: mpod.kb.io
   rules:
   - apiGroups:
     - ""

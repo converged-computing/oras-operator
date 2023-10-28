@@ -10,27 +10,47 @@ SPDX-License-Identifier: MIT
 package v1alpha1
 
 import (
+	"context"
+	"fmt"
+
+	corev1 "k8s.io/api/core/v1"
+	runtime "k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
-// log is for logging in this package.
+// IMPORTANT: the builder will derive this name automatically from the gvk (kind, version, etc. so find the actual created path in the logs)
+//  kubectl describe mutatingwebhookconfigurations.admissionregistration.k8s.io
+//+kubebuilder:webhook:path=/mutate--v1-pod,mutating=true,failurePolicy=fail,sideEffects=None,groups="",resources=pods,verbs=create;update,versions=v1,name=morascache.kb.io,admissionReviewVersions=v1
+
 var orascachelog = logf.Log.WithName("orascache-resource")
+
+type PodInjector struct {
+	//	Client  client.Client
+	//decoder *admission.Decoder
+}
 
 func (r *OrasCache) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
+		For(&corev1.Pod{}).
+		WithDefaulter(&PodInjector{}).
 		Complete()
 }
 
-//+kubebuilder:webhook:path=/mutate-cache-converged-computing-github-io-v1alpha1-orascache,mutating=true,failurePolicy=fail,sideEffects=None,groups="",resources=pods,verbs=create;update,versions=v1,name=morascache.kb.io,admissionReviewVersions=v1
+var _ webhook.CustomDefaulter = &PodInjector{}
 
-var _ webhook.Defaulter = &OrasCache{}
+func (a *PodInjector) Default(ctx context.Context, obj runtime.Object) error {
+	log := logf.FromContext(ctx)
+	pod, ok := obj.(*corev1.Pod)
+	if !ok {
+		return fmt.Errorf("expected a Pod but got a %T", obj)
+	}
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *OrasCache) Default() {
-	orascachelog.Info("default", "name", r.Name)
-
-	// TODO(user): fill in your defaulting logic.
+	if pod.Annotations == nil {
+		pod.Annotations = map[string]string{}
+	}
+	pod.Annotations["example-mutating-admission-webhook"] = "pumpkin-power"
+	log.Info("Annotated Pod")
+	return nil
 }
