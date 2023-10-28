@@ -94,15 +94,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Create certificates for the webhooks
-	// TODO try to make own cert manager so we don't need cert-manager?
-	/*certsReady := make(chan struct{})
-	if err = certs.Create(mgr, certsReady); err != nil {
-		setupLog.Error(err, "Unable to set up webhook certificate rotation")
-		os.Exit(1)
-	}
-	<-certsReady*/
-
 	// Create a RESTful client for the MiniCluster controller. We need this to actually
 	// interact with pods in the cluster!
 	gvk := schema.GroupVersionKind{

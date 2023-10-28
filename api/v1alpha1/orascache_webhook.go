@@ -13,6 +13,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/converged-computing/oras-operator/pkg/oras"
 	corev1 "k8s.io/api/core/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -26,10 +27,7 @@ import (
 
 var orascachelog = logf.Log.WithName("orascache-resource")
 
-type PodInjector struct {
-	//	Client  client.Client
-	//decoder *admission.Decoder
-}
+type PodInjector struct{}
 
 func (r *OrasCache) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
@@ -40,17 +38,11 @@ func (r *OrasCache) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 var _ webhook.CustomDefaulter = &PodInjector{}
 
+// Default is the expected entrypoint for a webhook
 func (a *PodInjector) Default(ctx context.Context, obj runtime.Object) error {
-	log := logf.FromContext(ctx)
 	pod, ok := obj.(*corev1.Pod)
 	if !ok {
 		return fmt.Errorf("expected a Pod but got a %T", obj)
 	}
-
-	if pod.Annotations == nil {
-		pod.Annotations = map[string]string{}
-	}
-	pod.Annotations["example-mutating-admission-webhook"] = "pumpkin-power"
-	log.Info("Annotated Pod")
-	return nil
+	return oras.InjectPod(ctx, pod)
 }
