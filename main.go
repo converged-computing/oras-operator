@@ -134,16 +134,6 @@ func main() {
 		setupLog.Error(err, "unable to create webhook", "webhook", "OrasCache")
 		os.Exit(1)
 	}
-	//mgr.GetWebhookServer().Register("/mutate-v1-pod", &webhook.Admission{Handler: &podhook.PodInjector{Client: mgr.GetClient()}})
-	//if err := builder.WebhookManagedBy(mgr).
-	//	For(&corev1.Pod{}).
-	//	WithDefaulter(&webhook.PodInjector{}).
-	//	//WithValidator(&podValidator{}).
-	//	Complete(); err != nil {
-	//	setupLog.Error(err, "unable to create webhook", "webhook", "Pod")
-	//	os.Exit(1)
-	//}
-
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
