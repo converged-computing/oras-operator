@@ -22,6 +22,7 @@ import (
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
+
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 
@@ -35,7 +36,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	cachev1alpha1 "github.com/converged-computing/oras-operator/api/v1alpha1"
+	api "github.com/converged-computing/oras-operator/api/v1alpha1"
 	controllers "github.com/converged-computing/oras-operator/controllers/oras"
 	//+kubebuilder:scaffold:imports
 )
@@ -48,7 +49,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	utilruntime.Must(cachev1alpha1.AddToScheme(scheme))
+	utilruntime.Must(api.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -92,6 +93,7 @@ func main() {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
+
 	// Create a RESTful client for the MiniCluster controller. We need this to actually
 	// interact with pods in the cluster!
 	gvk := schema.GroupVersionKind{
@@ -103,7 +105,7 @@ func main() {
 	if err != nil {
 		setupLog.Error(err, "unable to create REST HTTP client", "controller", c)
 	}
-	restClient, err := apiutil.RESTClientForGVK(gvk, false, mgr.GetConfig(), serializer.NewCodecFactory(mgr.GetScheme()))
+	restClient, err := apiutil.RESTClientForGVK(gvk, false, mgr.GetConfig(), serializer.NewCodecFactory(mgr.GetScheme()), c)
 	if err != nil {
 		setupLog.Error(err, "unable to create REST client", "controller", restClient)
 	}
@@ -117,6 +119,10 @@ func main() {
 		RESTClient: restClient,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "OrasCache")
+		os.Exit(1)
+	}
+	if err = (&api.OrasCache{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "OrasCache")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

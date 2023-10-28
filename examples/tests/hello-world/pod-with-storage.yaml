@@ -1,0 +1,14 @@
+kind: Pod
+apiVersion: v1
+metadata:
+  name: pumpkin-pod
+  annotations:
+     oras.converged-computing.github.io/identifier: hello-world
+     oras.converged-computing.github.io/output-path: /workflow/hello-world.txt
+spec:
+  containers:
+    - name: my-container
+      image: ubuntu
+
+      # TODO change to touch that workflow hello-world.txt when done
+      command: [ "sleep", "1000000" ]

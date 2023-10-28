@@ -32,7 +32,7 @@ a workflow or set of experiments, we can test the following approach / take the 
 
 1. Create an operator (this one) that creates the ORAS registry to exist in a namespace and be provided via a service.
 2. Watch for labels (coming from any Kubernetes workload abstraction that uses pods to run applications) that provide metadata about storage paths and needs.
-3. Given one or more pods are detected, the controller will inject a sidecar that will manage adding the storage. This is a simple interaction that would come down to:
+3. Given one or more pods are detected, the controller will inject a sidecar using a [mutating admission webhook](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#mutatingadmissionwebhook) that will manage adding the storage. This is a simple interaction that would come down to:
   - A sidecar container with the ORAS client installed and credentials
   - A known identifier for the artifact to pull, and to what path
   - Pulling the artifact to the desired path via a shared empty volume
@@ -59,9 +59,10 @@ You’ll need a Kubernetes cluster to run against. You can use [KIND](https://si
 kind create cluster
 ```
 
-Install the operator (development here)
+Install the operator (development here) and this include [cert-manager](https://github.com/cert-manager/cert-manager) for webhook certificates:
 
 ```sh
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.1/cert-manager.yaml
 make test-deploy-recreate
 
 # same as...
@@ -74,6 +75,18 @@ See logs:
 ```bash
 kubectl logs -n oras-operator-system oras-operator-controller-manager-ff66845dd-5299h 
 ```
+
+Then try one of the examples below.
+
+## TODO:
+
+- watch for pod creation with a label
+- for the label, add the webhook
+
+### Hello World
+
+For this hello world example we will create the 
+This shows creating (and interacting) with a simple ORAS registry.
 
 Try creating your oras cache:
 
