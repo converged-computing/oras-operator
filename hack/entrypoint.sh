@@ -9,6 +9,8 @@ shift
 
 # The command is the remainder of the script $@
 echo "Command is $@"
+echo "Artifact input is ${artifactInput}"
+echo "Artifact output is ${artifactOutput}"
 
 # Wait for the sidecar to finish, indicated by the file indicator we wait for
 wget -q https://github.com/converged-computing/goshare/releases/download/2023-09-06/wait-fs
@@ -33,7 +35,7 @@ $@
 mkdir -p /mnt/oras/outputs
 
 # Same with output - either copy from working directory, or as indicated
-if [[ "${artifactInput}" == "NA" ]]; then
+if [[ "${artifactOutput}" == "NA" ]]; then
     cp -R . /mnt/oras/outputs/
 else
     cp -R ${artifactOutput} /mnt/oras/outputs/

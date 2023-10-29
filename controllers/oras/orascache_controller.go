@@ -66,7 +66,6 @@ func (r *OrasCacheReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	r.Log.Info("📦️ Event received by OrasCache controller!")
 	r.Log.Info("Request: ", "req", req)
 
-	r.Log.Info("Spec: ", "spec", spec)
 	err := r.Get(ctx, req.NamespacedName, &spec)
 	if err != nil {
 		r.Log.Info("🟥️ Failed to get OrasCache. Re-running reconcile.")
@@ -80,7 +79,6 @@ func (r *OrasCacheReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	// Ensure the oras cache is deployed
-	r.Log.Info("Spec: ", "spec", spec)
 	result, err := r.ensureOrasCache(ctx, &spec)
 	if err != nil {
 		r.Log.Error(err, "🟥️ Issue ensuring OrasCache")

@@ -29,6 +29,9 @@ Currently not supported (but will be soon / if needed):
 - A target of the mutating admission webhook for job or jobset instead of pod. The pod target might not scale, but Job has a better chance.
 - More than one launcher container in a pod
 
+Note that while the above can be set manually, the expectation is that a workflow tool will do it. For each of the `input-path` and `output-path` we recommend providing
+specific files or directories, and note that if one is not set we use the working directory, which (if this is the root of the container) will result in an error.
+
 ### Annotations
 
 ## Overview

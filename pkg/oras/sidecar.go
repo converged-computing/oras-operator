@@ -25,18 +25,15 @@ func AddSidecar(pod *corev1.Pod, settings *orasSettings.OrasCacheSettings) error
 	// Oras entrypoint will take as arguments
 	cacheName := settings.Get("oras-cache")
 	orasEntrypoint := settings.GetOrasEntrypoint(pod)
-	logger.Info(orasEntrypoint)
 
 	// Get the volumeMount
 	volumeMount := getEmptyDirVolumeMount()
 
 	// Design the sidecar container
 	sidecar := corev1.Container{
-		Image: settings.Get("oras-container"),
-		Name:  "oras",
-
-		// TODO this is sleep, but we will interactively test
-		Command:      []string{"sh", "-c", "sleep infinity"},
+		Image:        settings.Get("oras-container"),
+		Name:         "oras",
+		Command:      []string{"sh", "-c", orasEntrypoint},
 		VolumeMounts: []corev1.VolumeMount{volumeMount},
 		WorkingDir:   defaults.OrasMountPath,
 	}
@@ -62,7 +59,6 @@ func AddSidecar(pod *corev1.Pod, settings *orasSettings.OrasCacheSettings) error
 	}
 
 	updatedContainers := []corev1.Container{}
-	logger.Infof("Starting container loop")
 	for _, container := range pod.Spec.Containers {
 
 		// If launcher defined and this isn't it, skip
@@ -80,7 +76,6 @@ func AddSidecar(pod *corev1.Pod, settings *orasSettings.OrasCacheSettings) error
 
 		// Assemble the old entrypoint command
 		cmd := strings.Join(append(container.Command, container.Args...), " ")
-		logger.Infof("Old command is %s", cmd)
 
 		// artifactInput, artifactOutput, original command that is wrapped
 		entrypoint := settings.GetApplicationEntrypoint(cmd)
@@ -88,13 +83,11 @@ func AddSidecar(pod *corev1.Pod, settings *orasSettings.OrasCacheSettings) error
 		// We should only be adding this to one container
 		container.Command = []string{"sh", "-c", entrypoint}
 		container.Args = []string{}
-		logger.Infof("Updating container %s", container)
 		updatedContainers = append(updatedContainers, container)
 	}
 
 	// Add the sidecar at the end
 	updatedContainers = append(updatedContainers, sidecar)
 	pod.Spec.Containers = updatedContainers
-	logger.Infof("Updated containers %s", pod.Spec.Containers)
 	return nil
 }
