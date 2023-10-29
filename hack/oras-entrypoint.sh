@@ -1,5 +1,8 @@
 #!/bin/bash
 
+echo "Expecting: <pull-from> <push-to>"
+echo "Full provided set of arguments are $@"
+
 # The command is the remainder of the script $@
 pullfrom="${1}"
 pushto="${2}"

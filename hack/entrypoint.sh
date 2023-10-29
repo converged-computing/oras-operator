@@ -1,5 +1,8 @@
 #!/bin/bash
 
+echo "Expecting: <artifact-input> <artifact-output> <command>..."
+echo "Full provided set of arguments are $@"
+
 # First get the args we need for locations for the artifact
 artifactInput="${1}"
 shift
