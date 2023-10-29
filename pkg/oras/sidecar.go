@@ -8,6 +8,7 @@ SPDX-License-Identifier: MIT
 package oras
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/converged-computing/oras-operator/pkg/defaults"
@@ -55,16 +56,21 @@ func AddSidecar(pod *corev1.Pod, settings *orasSettings.OrasCacheSettings) error
 	// Add the emptyDir that will have the new entrypoint to each launcher
 	launcher := settings.Get("container")
 
+	// If we have more than one container, launcher is required
+	if len(pod.Spec.Containers) > 1 && launcher == "" {
+		return fmt.Errorf("A launcher container name %s/container is required for >1 container.", defaults.OrasCachePrefix)
+	}
+
 	updatedContainers := []corev1.Container{}
-	found := false
+	logger.Infof("Starting container loop")
 	for _, container := range pod.Spec.Containers {
 
 		// If launcher defined and this isn't it, skip
 		if launcher != "" && container.Name != launcher {
+			logger.Infof("Launcher is defined as %s and container name %s does not match, skipping", launcher, container.Name)
+			updatedContainers = append(updatedContainers, container)
 			continue
 		}
-
-		logger.Infof("Updating container %s", container)
 
 		// Add the emptyDir volume
 		if container.VolumeMounts == nil {
@@ -74,16 +80,14 @@ func AddSidecar(pod *corev1.Pod, settings *orasSettings.OrasCacheSettings) error
 
 		// Assemble the old entrypoint command
 		cmd := strings.Join(append(container.Command, container.Args...), " ")
+		logger.Infof("Old command is %s", cmd)
 
 		// artifactInput, artifactOutput, original command that is wrapped
 		entrypoint := settings.GetApplicationEntrypoint(cmd)
 
 		// We should only be adding this to one container
-		if !found {
-			container.Command = []string{"sh", "-c", entrypoint}
-			container.Args = []string{}
-			found = true
-		}
+		container.Command = []string{"sh", "-c", entrypoint}
+		container.Args = []string{}
 		logger.Infof("Updating container %s", container)
 		updatedContainers = append(updatedContainers, container)
 	}
@@ -91,5 +95,6 @@ func AddSidecar(pod *corev1.Pod, settings *orasSettings.OrasCacheSettings) error
 	// Add the sidecar at the end
 	updatedContainers = append(updatedContainers, sidecar)
 	pod.Spec.Containers = updatedContainers
+	logger.Infof("Updated containers %s", pod.Spec.Containers)
 	return nil
 }

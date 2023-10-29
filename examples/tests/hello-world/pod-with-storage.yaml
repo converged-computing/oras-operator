@@ -10,12 +10,15 @@ metadata:
      oras.converged-computing.github.io/oras-cache: orascache-sample
      oras.converged-computing.github.io/output-uri: dinosaur/hello-world:latest
 
-     # TODO change script to touch this file...
-     oras.converged-computing.github.io/output-path: /workflow/hello-world.txt
+     # Dummy example to use hello-world.txt touched in working directory
+     oras.converged-computing.github.io/output-path: hello-world.txt
+
+     # Print all final settings in the log
+     oras.converged-computing.github.io/debug: "true"
 spec:
   containers:
     - name: my-container
       image: ubuntu
 
-      # TODO change to touch that workflow hello-world.txt when done
-      command: [ "sleep", "1000000" ]
+      # Touch this file to be pushed to an artifact for the next step
+      command: [ "touch", "hello-world.txt" ]

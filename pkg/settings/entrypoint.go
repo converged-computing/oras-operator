@@ -32,8 +32,13 @@ func (s *OrasCacheSettings) GetOrasEntrypoint(pod *corev1.Pod) string {
 	n := "oras-run-cache.sh"
 
 	// Assemble pull to and from
-	pullFrom := fmt.Sprintf("%s/%s", registry, pullFromURI)
-	pushTo := fmt.Sprintf("%s/%s", registry, pushToURI)
+	var pullFrom, pushTo string = "NA", "NA"
+	if pullFromURI != "NA" {
+		pullFrom = fmt.Sprintf("%s/%s", registry, pullFromURI)
+	}
+	if pushToURI != "NA" {
+		pushTo = fmt.Sprintf("%s/%s", registry, pushToURI)
+	}
 
 	// Ensure we have wget
 	orasEntrypoint := fmt.Sprintf("%s wget -O %s %s && chmod +x %s && ./%s %s %s", updates, n, orasScript, n, n, pullFrom, pushTo)

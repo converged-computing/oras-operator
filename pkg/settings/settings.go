@@ -28,6 +28,9 @@ var (
 		// The name of the sidecar orchestrator
 		"oras-cache": {Required: true, NonEmpty: true},
 
+		// Debug mode to print / show all settings
+		"debug": {Required: false, NonEmpty: true, Value: "false"},
+
 		// The container with oras to run for the service
 		"oras-container": {Required: true, Value: defaults.OrasBaseImage},
 
@@ -62,9 +65,29 @@ func (s *OrasCacheSettings) Get(name string) string {
 
 	// If not defined, return NA
 	if !ok {
-		return "NA"
+		return getDefaultSetting(name)
 	}
 	return setting.Value
+}
+
+// getDefaultSetting gets the default setting, if exists.
+func getDefaultSetting(name string) string {
+
+	setting, ok := defaultSettings[name]
+
+	// If we know the setting, return the default value
+	if ok {
+		return setting.Value
+	}
+	// Otherwise we have no idea.
+	return ""
+}
+
+// PrintSettings print all settings if debug mode is on
+func (s *OrasCacheSettings) PrintSettings() {
+	for name, setting := range s.Settings {
+		logger.Infof("🌟️ %s: %s", name, setting.Value)
+	}
 }
 
 func (s *OrasCacheSettings) Validate() bool {
@@ -114,6 +137,9 @@ func NewOrasCacheSettings(pod *corev1.Pod) *OrasCacheSettings {
 	wrapper := OrasCacheSettings{}
 	settings := Settings{}
 
+	// Do we have debug mode on?
+	debug := false
+
 	// Parse all annotations looking for oras cache prefix
 	for key, value := range pod.Annotations {
 		if strings.HasPrefix(key, defaults.OrasCachePrefix) {
@@ -126,6 +152,9 @@ func NewOrasCacheSettings(pod *corev1.Pod) *OrasCacheSettings {
 
 			parts := strings.SplitN(key, "/", 2)
 			field := parts[1]
+			if field == "debug" && value == "true" {
+				debug = true
+			}
 
 			defaultSetting, ok := defaultSettings[field]
 			if !ok {
@@ -140,5 +169,8 @@ func NewOrasCacheSettings(pod *corev1.Pod) *OrasCacheSettings {
 		}
 	}
 	wrapper.Settings = settings
+	if debug {
+		wrapper.PrintSettings()
+	}
 	return &wrapper
 }
