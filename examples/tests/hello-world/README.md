@@ -5,6 +5,17 @@ This examples includes two pods that you can apply to a cluster that has the ora
 - [pod-with-storage.yaml](pod-with-storage.yaml): has a label that indicates it wants storage setup.
 - [pod.yaml](pod.yaml) does not
 
+Let's create our registry in the default namespace:
+
+```bash
+kubectl apply -f oras.yaml
+```
+You should see it running as a pod and a service
+
+```bash
+kubectl  get pods,svc | grep oras
+```
+
 The basic logic of the operator is to use annotations to determine when to add a local storage cache.
 For example, if you have installed the cert-manager and operator and create the first pod, you'll see the following
 in the operator logs:

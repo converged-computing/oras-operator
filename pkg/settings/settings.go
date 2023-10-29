@@ -5,16 +5,13 @@ Copyright 2023 Lawrence Livermore National Security, LLC
 SPDX-License-Identifier: MIT
 */
 
-package oras
+package settings
 
 import (
 	"strings"
 
+	"github.com/converged-computing/oras-operator/pkg/defaults"
 	corev1 "k8s.io/api/core/v1"
-)
-
-const (
-	orasCachePrefix = "oras.converged-computing.github.io"
 )
 
 var (
@@ -22,6 +19,10 @@ var (
 		"input-path":  {Required: false, NonEmpty: true},
 		"output-path": {Required: false, NonEmpty: true},
 		"identifier":  {Required: true, NonEmpty: true},
+
+		// The name of the orchestrator
+		"oras-cache":     {Required: true, NonEmpty: true},
+		"oras-container": {Required: true, Value: defaults.OrasBaseImage},
 	}
 )
 
@@ -41,7 +42,16 @@ type OrasCacheSettings struct {
 	Settings      Settings
 }
 
-func (s *OrasCacheSettings) validate() bool {
+// Get a named setting
+func (s *OrasCacheSettings) Get(name string) string {
+	setting, ok := s.Settings[name]
+	if !ok {
+		return ""
+	}
+	return setting.Value
+}
+
+func (s *OrasCacheSettings) Validate() bool {
 
 	// Show the user the settings (for debugging)
 	logger.Info(s.Settings)
@@ -49,8 +59,15 @@ func (s *OrasCacheSettings) validate() bool {
 
 		// Retrieve the default, no go if required
 		setting, ok := s.Settings[key]
+
+		// If we don't have it, and it's required but a default provided
+		if !ok && defaultSetting.Required && defaultSetting.Value != "" {
+			s.Settings[key] = defaultSetting
+			continue
+		}
+
 		if !ok && defaultSetting.Required {
-			logger.Warnf("The %s/%s annotation is required", orasCachePrefix, key)
+			logger.Warnf("The %s/%s annotation is required", defaults.OrasCachePrefix, key)
 		}
 
 		// Continue (ignore) if setting is not required
@@ -58,7 +75,7 @@ func (s *OrasCacheSettings) validate() bool {
 			continue
 		}
 		if defaultSetting.NonEmpty && setting.Value == "" {
-			logger.Warnf("The %s/%s is empty, and cannot be.", orasCachePrefix, key)
+			logger.Warnf("The %s/%s is empty, and cannot be.", defaults.OrasCachePrefix, key)
 			return false
 		}
 	}
@@ -83,7 +100,7 @@ func NewOrasCacheSettings(pod *corev1.Pod) *OrasCacheSettings {
 
 	// Parse all annotations looking for oras cache prefix
 	for key, value := range pod.Annotations {
-		if strings.HasPrefix(key, orasCachePrefix) {
+		if strings.HasPrefix(key, defaults.OrasCachePrefix) {
 
 			// The annotation is required to be in format <identifier/field>
 			if !strings.Contains(key, "/") {
