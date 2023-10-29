@@ -16,13 +16,27 @@ import (
 
 var (
 	defaultSettings = map[string]OrasCacheSetting{
-		"input-path":  {Required: false, NonEmpty: true},
-		"output-path": {Required: false, NonEmpty: true},
-		"identifier":  {Required: true, NonEmpty: true},
 
-		// The name of the orchestrator
-		"oras-cache":     {Required: true, NonEmpty: true},
+		// Files are expected to be copied to/from here
+		"input-path":  {Required: false, NonEmpty: true, Value: defaults.DefaultMissing},
+		"output-path": {Required: false, NonEmpty: true, Value: defaults.DefaultMissing},
+
+		// Input and output container URIs for input/output artifacts
+		"input-uri":  {Required: false, NonEmpty: true, Value: defaults.DefaultMissing},
+		"output-uri": {Required: false, NonEmpty: true, Value: defaults.DefaultMissing},
+
+		// The name of the sidecar orchestrator
+		"oras-cache": {Required: true, NonEmpty: true},
+
+		// The container with oras to run for the service
 		"oras-container": {Required: true, Value: defaults.OrasBaseImage},
+
+		// The name(s) of the launcher containers (comma separated OK)
+		"container": {Required: false, NonEmpty: true},
+
+		// Entrypoint custom script to wget
+		"entrypoint":      {Required: false, NonEmpty: true, Value: defaults.ApplicationEntrypoint},
+		"oras-entrypoint": {Required: false, NonEmpty: true, Value: defaults.OrasEntrypoint},
 	}
 )
 
