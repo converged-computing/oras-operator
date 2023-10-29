@@ -1,3 +1,10 @@
+/*
+Copyright 2023 Lawrence Livermore National Security, LLC
+
+(c.f. AUTHORS, NOTICE.LLNS, COPYING)
+SPDX-License-Identifier: MIT
+*/
+
 package oras
 
 import (
@@ -15,10 +22,9 @@ func getEmptyDirVolume() corev1.Volume {
 }
 
 func getEmptyDirVolumeMount() corev1.VolumeMount {
-	return corev1.Volume{
-		Name: defaults.OrasEmptyDirKey,
-		VolumeSource: corev1.VolumeSource{
-			EmptyDir: &corev1.EmptyDirVolumeSource{},
-		},
+	return corev1.VolumeMount{
+		Name:      defaults.OrasEmptyDirKey,
+		ReadOnly:  false,
+		MountPath: defaults.OrasMountPath,
 	}
 }
