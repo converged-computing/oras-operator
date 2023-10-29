@@ -108,8 +108,9 @@ Then try one of the examples below.
 
 ## TODO:
 
-- watch for pod creation with a label
-- for the label, add the webhook
+- test out setup with scripts, merge when basics are working
+- create docs and automated builds for containers
+- test with a simple dag (maybe snakemake kueue executor)
 
 ### Hello World
 

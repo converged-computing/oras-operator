@@ -59,8 +59,10 @@ type OrasCacheSettings struct {
 // Get a named setting
 func (s *OrasCacheSettings) Get(name string) string {
 	setting, ok := s.Settings[name]
+
+	// If not defined, return NA
 	if !ok {
-		return ""
+		return "NA"
 	}
 	return setting.Value
 }

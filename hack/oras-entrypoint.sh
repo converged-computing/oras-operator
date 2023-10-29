@@ -7,10 +7,16 @@ echo "Artifact URI to retrieve is: ${pullfrom}"
 echo "Artifact URI to push to is: ${pushto}"
 
 # Create inputs artifact directory
-mkdir -p /mnt/oras/inputs
-if [[ "${pullfrom}" == "NA" ]]; then
-    touch /mnt/oras/oras-operator-init.txt
+mkdir -p /mnt/oras/inputs /mnt/oras/outputs
+if [[ "${pullfrom}" != "NA" ]]; then
+    cd /mnt/oras/inputs
+    oras pull ${pushto} --plain-http
+    echo "Pulled inputs to /mnt/oras/inputs"
+    ls -l
 fi
+
+# indicate to application we are ready to run!
+touch /mnt/oras/oras-operator-init.txt
 
 # Wait for the application to finish, indicated by the file indicator we wait for
 wget -q https://github.com/converged-computing/goshare/releases/download/2023-09-06/wait-fs

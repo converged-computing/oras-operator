@@ -13,6 +13,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+const (
+	updates = "apt-get update && apt-get install -y wget bash || apk add wget bash || yum install -y wget bash &&"
+)
+
 // GetOrasEntrypoint will derive the entrypoint for the sidecar
 func (s *OrasCacheSettings) GetOrasEntrypoint(pod *corev1.Pod) string {
 
@@ -31,7 +35,8 @@ func (s *OrasCacheSettings) GetOrasEntrypoint(pod *corev1.Pod) string {
 	pullFrom := fmt.Sprintf("%s/%s", registry, pullFromURI)
 	pushTo := fmt.Sprintf("%s/%s", registry, pushToURI)
 
-	orasEntrypoint := fmt.Sprintf("wget -O %s %s && chmod +x %s && ./run.sh %s", n, orasScript, n, pullFrom, pushTo)
+	// Ensure we have wget
+	orasEntrypoint := fmt.Sprintf("%s wget -O %s %s && chmod +x %s && ./%s %s %s", updates, n, orasScript, n, n, pullFrom, pushTo)
 	logger.Infof("Oras entrypoint: %s\n", orasEntrypoint)
 	return orasEntrypoint
 
@@ -47,5 +52,5 @@ func (s *OrasCacheSettings) GetApplicationEntrypoint(cmd string) string {
 
 	// wget the new script to run
 	cmd = fmt.Sprintf("%s %s %s", artifactInput, artifactOutput, cmd)
-	return fmt.Sprintf("wget -O %s %s && chmod +x %s && ./%s %s", n, script, n, n, cmd)
+	return fmt.Sprintf("%s wget -O %s %s && chmod +x %s && ./%s %s", updates, n, script, n, n, cmd)
 }
