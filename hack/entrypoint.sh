@@ -7,7 +7,7 @@ echo "Full provided set of arguments are $@"
 artifactInput="${1}"
 shift
 
-artifactOutput="${2}"
+artifactOutput="${1}"
 shift
 
 # The command is the remainder of the script $@

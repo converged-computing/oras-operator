@@ -41,7 +41,7 @@ func (s *OrasCacheSettings) GetOrasEntrypoint(pod *corev1.Pod) string {
 	}
 
 	// Ensure we have wget
-	orasEntrypoint := fmt.Sprintf("%s wget -O %s %s && chmod +x %s && ./%s %s %s", updates, n, orasScript, n, n, pullFrom, pushTo)
+	orasEntrypoint := fmt.Sprintf("%s wget --no-cache -O %s %s && chmod +x %s && ./%s %s %s", updates, n, orasScript, n, n, pullFrom, pushTo)
 	logger.Infof("Oras entrypoint: %s\n", orasEntrypoint)
 	return orasEntrypoint
 
@@ -57,5 +57,5 @@ func (s *OrasCacheSettings) GetApplicationEntrypoint(cmd string) string {
 
 	// wget the new script to run
 	cmd = fmt.Sprintf("%s %s %s", artifactInput, artifactOutput, cmd)
-	return fmt.Sprintf("%s wget -O %s %s && chmod +x %s && ./%s %s", updates, n, script, n, n, cmd)
+	return fmt.Sprintf("%s wget --no-cache -O %s %s && chmod +x %s && ./%s %s", updates, n, script, n, n, cmd)
 }
