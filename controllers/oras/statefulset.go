@@ -17,6 +17,7 @@ import (
 	//	corev1 "k8s.io/api/core/v1"
 
 	api "github.com/converged-computing/oras-operator/api/v1alpha1"
+	"github.com/converged-computing/oras-operator/pkg/defaults"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -84,10 +85,8 @@ func (r *OrasCacheReconciler) createStatefulSet(
 
 	// start with one registry for now
 	var replicas int32 = 1
-
-	// These just need to match for now :)
 	labels := map[string]string{
-		"oras-provisioner": spec.Name,
+		defaults.OrasSelectorKey: spec.Namespace,
 	}
 
 	set := &appsv1.StatefulSet{

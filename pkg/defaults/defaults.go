@@ -12,4 +12,5 @@ package defaults
 const (
 	OrasCachePrefix = "oras.converged-computing.github.io"
 	OrasBaseImage   = "ghcr.io/oras-project/oras:v1.1.0"
+	OrasSelectorKey = "oras-namespace"
 )

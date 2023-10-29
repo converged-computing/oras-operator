@@ -3,6 +3,8 @@ apiVersion: v1
 metadata:
   name: pumpkin-pod
   annotations:
+     # the name of the cache for the workflow, the name from oras.yaml
+     oras.converged-computing.github.io/oras-cache: orascache-sample
      oras.converged-computing.github.io/identifier: hello-world
      oras.converged-computing.github.io/output-path: /workflow/hello-world.txt
 spec:

@@ -16,9 +16,12 @@ import (
 
 var (
 	defaultSettings = map[string]OrasCacheSetting{
-		"input-path":     {Required: false, NonEmpty: true},
-		"output-path":    {Required: false, NonEmpty: true},
-		"identifier":     {Required: true, NonEmpty: true},
+		"input-path":  {Required: false, NonEmpty: true},
+		"output-path": {Required: false, NonEmpty: true},
+		"identifier":  {Required: true, NonEmpty: true},
+
+		// The name of the orchestrator
+		"oras-cache":     {Required: true, NonEmpty: true},
 		"oras-container": {Required: true, Value: defaults.OrasBaseImage},
 	}
 )
