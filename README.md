@@ -2,6 +2,38 @@
 
 Deploy an ORAS registry (cache for workflow or experiment artifacts) as a service.
 
+## Usage
+
+The Oras Operator works by way of deploying an ORAS (OCI Registry as Storage) Registry to a namespace, and then the workflow tool can add annotations to pods to control how artifacts are cached (retrieved and saved for subsequent steps). 
+In that most workflow tools understand inputs and outputs and the DAG, this should be feasible to do. Annotations and their defaults include:
+
+| Name | Description | Required | Default |
+|------|-------------|----------|---------|
+| input-path | The path in the container that any requested archive is expected to be extracted to | false | the working directory of the application container |
+| output-path | The output path in the container to save files | false | the working directory of the application container |
+| input-uri | The input unique resource identifier for the registry step, including repository, name, and tag | false | NA will be used if not defined, meaning the step has no inputs |
+| output-uri | The output unique resource identifier for the registry step, including repository, name, and tag | false | NA will be used if not defined, meaning the step has no outputs |
+| oras-cache | The name of the sidecar orchestrator | false | oras |
+| oras-container | The container with oras to run for the service | false | ghcr.io/oras-project/oras:v1.1.0 |
+| container | The name of the launcher container | false | assumes the first container found requires the launcher |
+| entrypoint | The https address of the application entrypoint to wget | false | [entrypoint.sh](https://raw.githubusercontent.com/converged-computing/oras-operator/main/hack/entrypoint.sh) |
+| oras-entrypoint | The https address of the oras cache sidecar entrypoint to wget | false | [oras-entrypoint.sh](https://raw.githubusercontent.com/converged-computing/oras-operator/main/hack/oras-entrypoint.sh) |
+| debug | Print all discovered settings in the operator log | false | "false" |
+
+
+There should not be a need to change the oras-cache (sidecar container) unless for some reason you have another container in the pod also called oras. It is exposed for this rare case.
+
+Currently not supported (but will be soon / if needed):
+
+- An ability to save specific (single) files or groups of files. It's much easier to target a directory so we are taking that approach to start.
+- A target of the mutating admission webhook for job or jobset instead of pod. The pod target might not scale, but Job has a better chance.
+- More than one launcher container in a pod
+
+Note that while the above can be set manually, the expectation is that a workflow tool will do it. For each of the `input-path` and `output-path` we recommend providing
+specific files or directories, and note that if one is not set we use the working directory, which (if this is the root of the container) will result in an error.
+
+### Annotations
+
 ## Overview
 
 These are early design notes while the operator is under development.
@@ -80,8 +112,10 @@ Then try one of the examples below.
 
 ## TODO:
 
-- watch for pod creation with a label
-- for the label, add the webhook
+- test out setup with scripts, merge when basics are working
+- create docs and automated builds for containers
+- test with a simple dag (maybe snakemake kueue executor)
+- add example for pulling final artifact from host
 
 ### Hello World
 

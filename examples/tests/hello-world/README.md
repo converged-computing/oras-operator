@@ -38,4 +38,21 @@ kubectl apply -f pod-with-storage.yaml
 {"level":"info","ts":1698515712.4857695,"caller":"oras/oras.go:42","msg":"Pod pumpkin-pod is marked for oras storage."}
 ```
 
-We will next be adding the actual functionality for oras, likely with a container that has it installed first.
+You can then look at the logs of each of the containers to see the artifact generating, being saved, and pushed.
+And then create a port forward on your local machine and pull the final thing with oras!
+
+
+```bash
+$ kubectl port-forward orascache-sample-0 5000:5000
+Forwarding from 127.0.0.1:5000 -> 5000
+Forwarding from [::1]:5000 -> 5000
+Handling connection for 5000
+Handling connection for 5000
+```
+```bash
+$ oras pull localhost:5000/dinosaur/hello-world:latest --insecure
+Downloading d2164606501f .
+Downloaded  d2164606501f .
+Pulled [registry] localhost:5000/dinosaur/hello-world:latest
+Digest: sha256:9efa0709ca99b09f68f2ed90a43aaf5feebe69d7158d40fc2025785811f166cb
+```
