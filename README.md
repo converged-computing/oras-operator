@@ -115,6 +115,7 @@ Then try one of the examples below.
 - test out setup with scripts, merge when basics are working
 - create docs and automated builds for containers
 - test with a simple dag (maybe snakemake kueue executor)
+- add example for pulling final artifact from host
 
 ### Hello World
 
