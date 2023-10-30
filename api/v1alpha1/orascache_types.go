@@ -22,6 +22,10 @@ type OrasCacheSpec struct {
 	// +default="ghcr.io/oras-project/registry:latest"
 	// +optional
 	Image string `json:"image"`
+
+	// Secret for the registry REGISTRY_HTTP_SECRET
+	// +optional
+	Secret string `json:"secret"`
 }
 
 // OrasCacheStatus defines the observed state of OrasCache

@@ -11,6 +11,7 @@ import (
 	"context"
 
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -117,6 +118,15 @@ func (r *OrasCacheReconciler) createStatefulSet(
 			ServiceName: spec.Name,
 			// Default UpdateStrategy is RollingUpdate
 		},
+	}
+
+	// Do we have a secret?
+	if spec.Spec.Secret != "" {
+		env := []corev1.EnvVar{{
+			Name:  "REGISTRY_HTTP_SECRET",
+			Value: spec.Spec.Secret,
+		}}
+		set.Spec.Template.Spec.Containers[0].Env = env
 	}
 
 	// Controller reference always needs to be set before creation
