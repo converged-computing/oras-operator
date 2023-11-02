@@ -22,7 +22,7 @@ You'll then also want to clone the repository.
 ```bash
 # Clone the source code
 $ git clone https://github.com/converged-computing/oras-operator
-$ cd metrics-operator
+$ cd oras-operator
 ```
 
 ## Local Development
@@ -110,28 +110,6 @@ We also use pre-commit for Python formatting:
 pip install -r .github/dev-requirements.txt
 pre-commit run --all-files
 ```
-
-## Writing Metric Containers
-
-This section will include instructions for how to write a metrics container.
-
-### General Instructions
-
-Metrics largely have functionality that comes from shared interfaces, such as a `LauncherWorker`
-design that has a main node launcher tasks, and some number of worker nodes, and basic interfaces
-for storage and applications. The best thing to do is explore the current metrics, find one that
-is similar to what you want to do, and use it as a template. As long as you put it in a known group
-directory, e.g., these:
-
-```bash
-pkg/metrics/
-├── app
-├── io
-├── network
-└── perf
-```
-
-It will be discovered and registered and available for use.
 
 ## Documentation
 
