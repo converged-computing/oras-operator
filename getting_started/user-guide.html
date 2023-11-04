@@ -465,6 +465,19 @@
     <span title="/getting_started/user-guide.md#getting-started (reference label)" class="md-ellipsis">Getting Started</span>
   </a>
   
+    <nav class="md-nav" aria-label="Getting Started">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    <span title="/getting_started/user-guide.md#examples (reference label)" class="md-ellipsis">Examples</span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -750,7 +763,14 @@ kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> <
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>logs<span class="w"> </span>-n<span class="w"> </span>oras-operator-system<span class="w"> </span>oras-operator-controller-manager-ff66845dd-5299h<span class="w"> </span>
 </code></pre></div>
 </div>
-<p>Then try one of the <a class="reference external" href="https://github.com/converged-computing/oras-operator/tree/main/examples">examples</a> in the repository.</p>
+<h3 id="examples">Examples<a class="headerlink" href="#examples" title="Link to this heading">¶</a></h3>
+<p>You can then try one of the <a class="reference external" href="https://github.com/converged-computing/oras-operator/tree/main/examples">examples</a> in the repository. A brief description of each is provided here,
+and likely we will add more detail as we develop them.</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/converged-computing/oras-operator/tree/main/examples/tests/registry/roas.yaml">tests/registry</a>: a basic example of creating an ORAS registry cache</p></li>
+<li><p><a class="reference external" href="https://github.com/converged-computing/oras-operator/tree/main/examples/tests/hello-world">tests/hello-world</a>: Writing one “hello-world” output and saving to an ORAS registry cache</p></li>
+<li><p><a class="reference external" href="https://github.com/converged-computing/oras-operator/tree/main/examples/woirkflow/metrics">workflows/metrics</a>: Running two Metrics Operator apps/metrics (LAMMPS and HWLOC) and getting results for each!</p></li>
+</ul>
 
 
   <hr>
@@ -758,7 +778,7 @@ kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> <
   <small>
     
       Last update:
-      Nov 02, 2023
+      Nov 04, 2023
     
   </small>
 </div>
