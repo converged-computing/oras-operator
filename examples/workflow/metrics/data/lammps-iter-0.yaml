@@ -22,8 +22,4 @@ spec:
   metrics:
    - name: app-lammps
      options:
-       command: mpirun --hostfile ./hostlist.txt -np 4 -ppn 2 lmp ... 2>&1 | tee -a lammps.out
-       
-       
-       
-       
+       command: mpirun --hostfile ./hostlist.txt -np 4 -ppn 2 lmp -v x 2 -v y 2 -v z 2 -in in.reaxc.hns -nocite 2>&1 | tee -a lammps.out
