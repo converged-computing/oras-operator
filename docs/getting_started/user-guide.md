@@ -135,4 +135,11 @@ See logs:
 kubectl logs -n oras-operator-system oras-operator-controller-manager-ff66845dd-5299h 
 ```
 
-Then try one of the [examples](https://github.com/converged-computing/oras-operator/tree/main/examples) in the repository.
+### Examples
+
+You can then try one of the [examples](https://github.com/converged-computing/oras-operator/tree/main/examples) in the repository. A brief description of each is provided here,
+and likely we will add more detail as we develop them.
+
+ - [tests/registry](https://github.com/converged-computing/oras-operator/tree/main/examples/tests/registry/roas.yaml): a basic example of creating an ORAS registry cache
+ - [tests/hello-world](https://github.com/converged-computing/oras-operator/tree/main/examples/tests/hello-world): Writing one "hello-world" output and saving to an ORAS registry cache
+ - [workflows/metrics](https://github.com/converged-computing/oras-operator/tree/main/examples/woirkflow/metrics): Running two Metrics Operator apps/metrics (LAMMPS and HWLOC) and getting results for each!

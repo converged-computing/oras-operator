@@ -57,6 +57,9 @@ spec:
                 default: ghcr.io/oras-project/registry:latest
                 description: Image is the oras registry to deploy
                 type: string
+              secret:
+                description: Secret for the registry REGISTRY_HTTP_SECRET
+                type: string
             type: object
           status:
             description: OrasCacheStatus defines the observed state of OrasCache
@@ -653,7 +656,6 @@ webhooks:
     - v1
     operations:
     - CREATE
-    - UPDATE
     resources:
     - pods
   sideEffects: None

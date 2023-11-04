@@ -34,7 +34,7 @@ var (
 		// The container with oras to run for the service
 		"oras-container": {Required: true, Value: defaults.OrasBaseImage},
 
-		// The name(s) of the launcher containers (comma separated OK)
+		// The name(s) of the launcher containers
 		"container": {Required: false, NonEmpty: true},
 
 		// Entrypoint custom script to wget
