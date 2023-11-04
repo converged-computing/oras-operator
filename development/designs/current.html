@@ -475,6 +475,67 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#implementation" class="md-nav__link">
+    <span title="/development/designs/current.md#implementation (reference label)" class="md-ellipsis">Implementation</span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Implementation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#registry" class="md-nav__link">
+    <span title="/development/designs/current.md#registry (reference label)" class="md-ellipsis">1.<wbr> Registry</span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#podspec" class="md-nav__link">
+    <span title="/development/designs/current.md#podspec (reference label)" class="md-ellipsis">2.<wbr> Pod<wbr>Spec</span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mutating-admission-webhook" class="md-nav__link">
+    <span title="/development/designs/current.md#mutating-admission-webhook (reference label)" class="md-ellipsis">3.<wbr> Mutating Admission Webhook</span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pod-logic" class="md-nav__link">
+    <span title="/development/designs/current.md#pod-logic (reference label)" class="md-ellipsis">4.<wbr> Pod Logic</span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#workflow" class="md-nav__link">
+    <span title="/development/designs/current.md#workflow (reference label)" class="md-ellipsis">5.<wbr> Workflow</span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Workflow">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="https://excalidraw.com/#json=sN3iS8cBh98E8dcr7Vjpx,RdUObkPRZf1SfCpvEuzV-A" class="md-nav__link">
+    <span class="md-ellipsis">Excalidraw assets</span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -577,7 +638,7 @@
 
 <h1 id="current-design">Current Design<a class="headerlink" href="#current-design" title="Link to this heading">¶</a></h1>
 <p>When running workflows, it is common to have intermediate artifacts that need to transition between
-steps. The typical strategy is to mount some peristent storage (e.g., cloud object storage)
+steps. The typical strategy is to mount some persistent storage (e.g., cloud object storage)
 and then share the space. However, this approach has the drawback of requiring a different solution
 per cloud, and requiring a different setup locally. The solution proposed here would work across clouds
 (or local) and provide a registry (OCI Registry cache) that can serve this purpose. The benefits of ORAS are:</p>
@@ -609,6 +670,45 @@ a workflow or set of experiments, we can test the following approach / take the 
 <h2 id="development-plan">Development Plan<a class="headerlink" href="#development-plan" title="Link to this heading">¶</a></h2>
 <p>I am going to start with a simple case of creating one Job with labels (metadata) to indicate creating artifacts for whatever my workflow does, and then retrieving some first step file, running something, and saving it and pulling the result to my local machine.</p>
 <p>After that I’ll bring in an actual DAG and workflow tool (e.g., Snakemake) and allow the tool to specify the metadata. I have this need already for Kueue and Snakemake (the executor plugin) so will work on that.</p>
+<h2 id="implementation">Implementation<a class="headerlink" href="#implementation" title="Link to this heading">¶</a></h2>
+<p>For the first implementation, the above was mostly successful! We can inspect the diagram below to see how it works:</p>
+<p><img alt="oras-operator.png" src="../../_images/oras-operator.png" /></p>
+<h3 id="registry">1. Registry<a class="headerlink" href="#registry" title="Link to this heading">¶</a></h3>
+<p>We deploy the ORAS Operator as a custom resource definition, meaning we deploy a registry service to a namespace, and it will be interacted with via a mutating admission webhook. The registry will be accessible via a headless service in that namespace. This is the second block of red in the picture above.</p>
+<h3 id="podspec">2. PodSpec<a class="headerlink" href="#podspec" title="Link to this heading">¶</a></h3>
+<p>In the very top (green) panel, we see a PodSpec (for some application) that has annotations for the ORAS Operator, or more specifically, the registry running in the same namespace. Any pod that is admitted into Kubernetes (and note that this can be a pod that is generated from a Job, JobSet, or Deployment, another operator, or really any means) is going to be inspected for these annotations. In the picture below, we have the following annotations under the “oras.onverged-computing.girthub.io” namespace:</p>
+<ul class="simple">
+<li><p>oras-cache: is the name of the cache we are targeting (e.g., the name from the OrasCache spec created</p></li>
+<li><p>output-uri: is the unique resource identifier to save our artifact to</p></li>
+<li><p>output-path: is the path in the application container where the artifact is expected (a single file or directory)</p></li>
+<li><p>container: the container to target that will generate the artifact file.</p></li>
+</ul>
+<p>For the above, the output-uri would typically be managed by a workflow tool. If you are running iterations of an experiment, you might just vary the tag to correspond to the iteration (e.g., <code class="docutils literal notranslate"><span class="pre">metrics/lammps:iter-0</span></code> through <code class="docutils literal notranslate"><span class="pre">metrics/lammps:iter-N</span></code>. Note that we don’t specify an <code class="docutils literal notranslate"><span class="pre">input-uri</span></code> because we don’t need to retrieve an artifact in advance, but if we did, we’d need an <code class="docutils literal notranslate"><span class="pre">input-path</span></code> too if we wanted to change it from the working directory. Finally, note that although the “launcher” container is expected to have the artifact (meaning it will have an ORAS sidecar added to handle the moving of assets) the other containers in the pods will also have access to the same empty volume and headless service. This is done assuming I don’t know what you want to do (and not providing consistency here could lead to trouble).</p>
+<h3 id="mutating-admission-webhook">3. Mutating Admission Webhook<a class="headerlink" href="#mutating-admission-webhook" title="Link to this heading">¶</a></h3>
+<p>The magic happens with the mutating admission webhook, which detects the pod creation, finds the annotations, and knows that the pod is targeted for mutation! In this case (third row, green panels) we see that the mutation means adding an ORAS sidecar. This include a sidecar container with an ORAS client ready to Go (no pun intended), a Volume with an empty directory, and the selector for the oras headless service. Also note that (not shown in this diagram) we modify the entrypoint. Specifically, logic is added to the start of the application pod to
+wait for ORAS to retrieve artifacts (if needed) and put them in place. The original entrypoint is then run, and logic is added to indicate that the application is done. Both of these use simple file indicators.</p>
+<h3 id="pod-logic">4. Pod Logic<a class="headerlink" href="#pod-logic" title="Link to this heading">¶</a></h3>
+<p>Now we can go into the logic of the different containers in the pod. How do artifacts get pulled and moved where they need to be, and then further saved? Let’s walk through an example, illustrated by the last row (blue Pod). When the containers first come up (note we have a launcher, a worker, and an oras sidecar), the application container “launcher” is waiting to see a file indicator that ORAS (oras sidecar) is done. Equivalently, When the “launcher” is running, the ORAS sidecar is waiting to see an indicator that the application is done. More specifically this means that:</p>
+<ol class="arabic simple">
+<li><p>An ORAS input artifact (if defined) is pulled and moved into the ORAS share.</p></li>
+<li><p>The file indicator is written so the application container can go.</p></li>
+<li><p>It moves the artifact from ORAS share to some other path (if specified this should be done in the annotation metadata)</p></li>
+<li><p>The application (original entrypoint) is run</p></li>
+<li><p>The application finishes, and the specified output is moved back to the ORAS share</p></li>
+<li><p>The file indicator is written by the application container</p></li>
+<li><p>The ORAS sidecar sees the application is done, and pushes the artifact.</p></li>
+</ol>
+<p>In the picture above, you can see the ORAS sidecar doing push and pull operations on behalf of the pods, and interacting with the registry service (that is shared by the namespace). The application containers get access to the artifacts via the ORAS share, and extra logic is added to the entrypoints to ensure that files or directories are moved to where they need to be.</p>
+<p>And that’s it! Since both containers need to cleanup for something like a Job to finish, in practice when the application finishes and ORAS pushes, in the case of a Job (that has a Completed state) it will complete and go away. But you can rest assured your experiment result or workflow step has been pushed to the ORAS Registry cache, and is ready to be used for a next step (or just retrieved by you). Hooray! A very simple example of this can be found <a class="reference external" href="https://github.com/converged-computing/oras-operator/tree/main/examples/workflow/metrics">here</a> to run and save metric experiment assets (xml, png, and log files).</p>
+<h3 id="workflow">5. Workflow<a class="headerlink" href="#workflow" title="Link to this heading">¶</a></h3>
+<p>Here is a higher level picture of what this might look like for a workflow:</p>
+<p><img alt="oras-operator-workflow.png" src="../../_images/oras-operator-workflow.png" /></p>
+<p>In the above, a workflow tool is adding annotations to pod (or Job -&gt; PodSpec Templates) programmatically, and the inputs/outputs are retrieved for each step, ensuring that the needed artifacts are retrieved and saved for each step. After the last step, the workflow runner can create a simple port forward to pull some final artifact or result to the local machine. Likely the intermediate artifacts could also be of interest, but it’s not entirely necessary.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://excalidraw.com/#json=sN3iS8cBh98E8dcr7Vjpx,RdUObkPRZf1SfCpvEuzV-A">Excalidraw assets</a></li>
+</ul>
+</div>
 
 
   <hr>
