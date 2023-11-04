@@ -1,4 +1,4 @@
-name: docs metrics-operator
+name: docs oras-operator
 on:
   push:
     branches: [main]

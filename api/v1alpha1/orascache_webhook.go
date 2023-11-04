@@ -23,7 +23,7 @@ import (
 
 // IMPORTANT: the builder will derive this name automatically from the gvk (kind, version, etc. so find the actual created path in the logs)
 //  kubectl describe mutatingwebhookconfigurations.admissionregistration.k8s.io
-//+kubebuilder:webhook:path=/mutate--v1-pod,mutating=true,failurePolicy=fail,sideEffects=None,groups="",resources=pods,verbs=create;update,versions=v1,name=morascache.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/mutate--v1-pod,mutating=true,failurePolicy=fail,sideEffects=None,groups="",resources=pods,verbs=create,versions=v1,name=morascache.kb.io,admissionReviewVersions=v1
 
 type PodInjector struct {
 	Cache *OrasCache

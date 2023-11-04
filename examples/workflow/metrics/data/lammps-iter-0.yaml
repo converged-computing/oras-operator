@@ -1,0 +1,25 @@
+apiVersion: flux-framework.org/v1alpha2
+kind: MetricSet
+metadata:
+  labels:
+    app.kubernetes.io/name: metricset
+    app.kubernetes.io/instance: metricset-sample
+  name: lammps-0
+spec:
+  pods: 2
+  # This puts the job on the oras registry network
+  # We do this since it's only possible to add one headless service (at least it seems)
+  serviceName: oras
+  pod:
+    annotations:
+     # the name of the cache for the workflow, the name from oras.yaml
+     oras.converged-computing.github.io/oras-cache: oras
+     oras.converged-computing.github.io/container: launcher
+     oras.converged-computing.github.io/output-uri: metric/lammps:iter-0
+     oras.converged-computing.github.io/output-path: /opt/lammps/examples/reaxff/HNS/lammps.out
+     oras.converged-computing.github.io/debug: "true"
+
+  metrics:
+   - name: app-lammps
+     options:
+       command: mpirun --hostfile ./hostlist.txt -np 4 -ppn 2 lmp -v x 2 -v y 2 -v z 2 -in in.reaxc.hns -nocite 2>&1 | tee -a lammps.out

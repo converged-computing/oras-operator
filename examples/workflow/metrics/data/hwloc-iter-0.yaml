@@ -1,0 +1,28 @@
+apiVersion: flux-framework.org/v1alpha2
+kind: MetricSet
+metadata:
+  labels:
+    app.kubernetes.io/name: metricset
+    app.kubernetes.io/instance: metricset-sample
+  name: hwloc-0
+spec:
+  pods: 1
+  # This puts the job on the oras registry network
+  # We do this since it's only possible to add one headless service (at least it seems)
+  serviceName: oras
+  pod:
+    annotations:
+     # the name of the cache for the workflow, the name from oras.yaml
+     oras.converged-computing.github.io/oras-cache: oras
+     oras.converged-computing.github.io/output-uri: metric/hwloc:iter-0
+     oras.converged-computing.github.io/output-path: /tmp/analysis
+     oras.converged-computing.github.io/debug: "true"
+  metrics:
+    - name: sys-hwloc      
+      # These are the default and do not need to be provided
+      options:
+      listOptions:
+        command:
+          - mkdir -p /tmp/analysis
+          - lstopo /tmp/analysis/architecture.png
+          - hwloc-ls /tmp/analysis/machine.xml
