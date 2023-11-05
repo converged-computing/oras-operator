@@ -13,7 +13,7 @@ This document describes the spec of our custom resource definition.
 
 ## Custom Resource Definition
 
-The operator custom resource defintion (CRD) currently takes just a few fields!
+The operator custom resource definition (CRD) currently takes just a few fields!
 
 ### header
 

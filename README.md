@@ -8,9 +8,7 @@ Deploy an ORAS registry (cache for workflow or experiment artifacts) as a servic
 
 ## TODO:
 
-- test out setup with scripts, merge when basics are working
-- create docs and automated builds for containers
-- watch job (and then edit template) insteaed of pod (or make a variable, better?)
+- watch job (and then edit template) instead of pod (or make a variable, better?)
 - test with a simple dag (maybe snakemake kueue executor)
 - multiple pods for registry and using secret / shared storage use case
 
