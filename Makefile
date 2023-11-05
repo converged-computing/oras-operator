@@ -143,6 +143,7 @@ $(LOCALBIN):
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
+HELMIFY ?= $(LOCALBIN)/helmify
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v3.8.7
@@ -250,5 +251,5 @@ helm: manifests kustomize helmify
 #	go run hack/addons-gen/main.go docs/_static/data/addons.json
 
 .PHONY: pre-push
-pre-push: generate # build-config-arm build-config docs-data
+pre-push: generate build-config-arm build-config # docs-data
 	git status
