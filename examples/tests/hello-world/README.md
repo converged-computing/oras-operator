@@ -5,6 +5,10 @@ This examples includes two pods that you can apply to a cluster that has the ora
 - [pod-with-storage.yaml](pod-with-storage.yaml): has a label that indicates it wants storage setup.
 - [pod.yaml](pod.yaml) does not
 
+And a job that will accomplish the same:
+
+- [job.yaml](job.yaml)
+
 Let's create our registry in the default namespace:
 
 ```bash
@@ -16,6 +20,8 @@ You should see it running as a pod and a service
 kubectl  get pods,svc | grep oras
 ```
 
+## Pod without ORAS
+
 The basic logic of the operator is to use annotations to determine when to add a local storage cache.
 For example, if you have installed the cert-manager and operator and create the first pod, you'll see the following
 in the operator logs:
@@ -26,6 +32,9 @@ kubectl apply -f pod.yaml
 ```console
 {"level":"warn","ts":1698514977.5395513,"caller":"oras/oras.go:31","msg":"Pod pumpkin-pod is not marked for oras storage."}
 ```
+
+
+## Pod with ORAS
 
 But for the other pod:
 
@@ -39,6 +48,20 @@ kubectl apply -f pod-with-storage.yaml
 ```
 
 You can then look at the logs of each of the containers to see the artifact generating, being saved, and pushed.
+
+## Job with ORAS
+
+Finally, create a job to do similar. This job shows piping the command into an output file.
+
+```bash
+kubectl apply -f job.yaml
+```
+
+Note that the annotations are placed on the pod template spec, and not directly on the job.
+
+
+## Pull Output
+
 And then create a port forward on your local machine and pull the final thing with oras!
 
 
@@ -49,8 +72,10 @@ Forwarding from [::1]:5000 -> 5000
 Handling connection for 5000
 Handling connection for 5000
 ```
+
 ```bash
-$ oras pull localhost:5000/dinosaur/hello-world:latest --insecure
+oras pull localhost:5000/dinosaur/hello-world:latest --insecure
+oras pull localhost:5000/dinosaur/hello-world:pancakes --insecure
 Downloading d2164606501f .
 Downloaded  d2164606501f .
 Pulled [registry] localhost:5000/dinosaur/hello-world:latest
