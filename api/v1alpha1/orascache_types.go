@@ -26,12 +26,6 @@ type OrasCacheSpec struct {
 	// Secret for the registry REGISTRY_HTTP_SECRET
 	// +optional
 	Secret string `json:"secret"`
-
-	// Object to watch (will default to job)
-	// +kubebuilder:default="job"
-	// +default="job"
-	// +optional
-	Object string `json:"object"`
 }
 
 // OrasCacheStatus defines the observed state of OrasCache
@@ -65,21 +59,10 @@ func init() {
 	SchemeBuilder.Register(&OrasCache{}, &OrasCacheList{})
 }
 
-// Validate that the watched object is pod or job
-// We don't currently support other types!
-func (o *OrasCache) ValidateWatchedObject() bool {
-	return o.Spec.Object == "job" || o.Spec.Object == "pod"
-}
-
 // Validate a requested metricset
 func (o *OrasCache) Validate() bool {
-
-	// By default we watch a job
-	if o.Spec.Object == "" {
-		o.Spec.Object = "job"
-	}
 	if o.Spec.Image == "" {
 		o.Spec.Image = "ghcr.io/oras-project/registry:latest"
 	}
-	return o.ValidateWatchedObject()
+	return true
 }

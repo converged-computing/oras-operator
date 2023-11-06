@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: pi
+  name: breakfast
 spec:
   template:
     metadata:
@@ -11,13 +11,13 @@ spec:
 
        # The URI for the workflow artifact output. Tag is important here - a steo
        # in a dag would need to also include input-uri and push/pull based on dag
-       oras.converged-computing.github.io/output-uri: dinosaur/hello-world:perl
+       oras.converged-computing.github.io/output-uri: dinosaur/hello-world:pancakes
 
        # Dummy example to use hello-world.txt touched in working directory
-       oras.converged-computing.github.io/output-path: perl.txt
+       oras.converged-computing.github.io/output-path: pancakes.txt
 
        # Pipe output to this path
-       oras.converged-computing.github.io/output-pipe: perl.txt
+       oras.converged-computing.github.io/output-pipe: pancakes.txt
 
        # Print all final settings in the log
        oras.converged-computing.github.io/debug: "true"
@@ -25,6 +25,6 @@ spec:
       containers:
       - name: pi
         image: perl:5.34.0
-        command: ["/bin/bash", "-c", "perl -Mbignum=bpi -wle print bpi(2000)"]
+        command: [echo, blueberry]
       restartPolicy: Never
   backoffLimit: 4

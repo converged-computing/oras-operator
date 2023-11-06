@@ -51,9 +51,10 @@ You can then look at the logs of each of the containers to see the artifact gene
 
 ## Job with ORAS
 
-Finally, create the same but with a job.
+Finally, create a job to run Pi. This job shows piping the command into an output file.
 
 ```
+kubectl apply -f job.yaml
 ```
 
 ## Pull Output
@@ -68,8 +69,10 @@ Forwarding from [::1]:5000 -> 5000
 Handling connection for 5000
 Handling connection for 5000
 ```
+
 ```bash
-$ oras pull localhost:5000/dinosaur/hello-world:latest --insecure
+oras pull localhost:5000/dinosaur/hello-world:latest --insecure
+oras pull localhost:5000/dinosaur/hello-world:pancakes --insecure
 Downloading d2164606501f .
 Downloaded  d2164606501f .
 Pulled [registry] localhost:5000/dinosaur/hello-world:latest
