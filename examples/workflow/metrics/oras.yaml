@@ -6,6 +6,3 @@ metadata:
 spec:
   # We can use all the defaults here (this is a default)
   image: ghcr.io/oras-project/registry:latest
-
-  # Change the default object to be watched to pod
-  object: pod

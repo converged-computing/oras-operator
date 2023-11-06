@@ -122,7 +122,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Allow to setup Job or Pod webhook
+	// This can handle a Pod or a Job
 	if err = (&api.OrasCache{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "OrasCache")
 		os.Exit(1)
