@@ -118,11 +118,11 @@ You’ll need a Kubernetes cluster to run against. You can use [KIND](https://si
 kind create cluster
 ```
 
-Install the operator (development here) and this include [cert-manager](https://github.com/cert-manager/cert-manager) for webhook certificates:
+Install the operator and this include [cert-manager](https://github.com/cert-manager/cert-manager) for webhook certificates:
 
 ```sh
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.1/cert-manager.yaml
-make test-deploy-recreate
+kubectl apply -f https://raw.githubusercontent.com/converged-computing/oras-operator/main/examples/dist/oras-operator.yaml
 
 # same as...
 make test-deploy

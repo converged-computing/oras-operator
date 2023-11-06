@@ -4,6 +4,9 @@ echo "Expecting: <artifact-input> <artifact-output> <command>..."
 echo "Full provided set of arguments are $@"
 
 # First get the args we need for locations for the artifact
+artifactPipe="${1}"
+shift 
+
 artifactInput="${1}"
 shift
 
@@ -12,6 +15,7 @@ shift
 
 # The command is the remainder of the script $@
 echo "Command is $@"
+echo "Pipe to is ${artifactPipe}"
 echo "Artifact input is ${artifactInput}"
 echo "Artifact output is ${artifactOutput}"
 
@@ -32,7 +36,11 @@ else
 fi
 
 # Run the original command
+if [[ "${artifactPipe}" == "NA" ]]; then
 $@
+else
+$@ > ${artifactPipe}
+fi
 
 # indicate we are done
 mkdir -p /mnt/oras/outputs

@@ -17,14 +17,14 @@ import (
 )
 
 // Exit early if we don't have the launcher
-func hasLauncher(pod *corev1.Pod, launcher string) bool {
+func hasLauncher(containers []corev1.Container, launcher string) bool {
 
 	// If launcher not defined, we target all containers in the pod
 	if launcher == "" {
 		return true
 	}
 	found := false
-	for _, container := range pod.Spec.Containers {
+	for _, container := range containers {
 		if container.Name == launcher {
 			found = true
 		}
@@ -32,15 +32,18 @@ func hasLauncher(pod *corev1.Pod, launcher string) bool {
 	return found
 }
 
-// AddSidecar adds a side car container with oras. Example command;
+// AddSidecar adds a side car container toa  pod with oras. Example command;
 // oras push {{ registry }}/{{ container }} .
 // oras push 10.244.0.17:5000/hello-world/repo:tag --plain-http .
 // oras push orascache-sample-0.orascache-sample.default.svc.cluster.local:5000/hello-world/repo:tag --plain-http .
-func AddSidecar(pod *corev1.Pod, settings *orasSettings.OrasCacheSettings) error {
+func AddSidecar(
+	spec *corev1.PodSpec,
+	namespace string,
+	settings *orasSettings.OrasCacheSettings) error {
 
 	// Oras entrypoint will take as arguments
 	cacheName := settings.Get("oras-cache")
-	orasEntrypoint := settings.GetOrasEntrypoint(pod)
+	orasEntrypoint := settings.GetOrasEntrypoint(namespace)
 
 	// Add the emptyDir that will have the new entrypoint to each launcher
 	launcher := settings.Get("container")
@@ -56,30 +59,42 @@ func AddSidecar(pod *corev1.Pod, settings *orasSettings.OrasCacheSettings) error
 		VolumeMounts: []corev1.VolumeMount{volumeMount},
 		WorkingDir:   defaults.OrasMountPath,
 	}
-	// The selector for the namespaced registry is the namespace
-	if pod.Labels == nil {
-		pod.Labels = map[string]string{}
-	}
-
-	// Even pods without say, the launcher, that are marked should have the network added
-	pod.Labels[defaults.OrasSelectorKey] = pod.ObjectMeta.Namespace
-	pod.Spec.Subdomain = cacheName
+	spec.Subdomain = cacheName
 
 	// Add volume with emptyDir to the pod
-	if pod.Spec.Volumes == nil {
-		pod.Spec.Volumes = []corev1.Volume{}
+	if spec.Volumes == nil {
+		spec.Volumes = []corev1.Volume{}
 	}
-	pod.Spec.Volumes = append(pod.Spec.Volumes, getEmptyDirVolume())
+	spec.Volumes = append(spec.Volumes, getEmptyDirVolume())
 
 	// If we have more than one container, launcher is required
-	if len(pod.Spec.Containers) > 1 && launcher == "" {
+	if len(spec.Containers) > 1 && launcher == "" {
 		return fmt.Errorf("A launcher container name %s/container is required for >1 container.", defaults.OrasCachePrefix)
 	}
 
 	// We want to add the sidecar logic (and emptyVolume) to containers that are targeted
 	// This means oras is added to the pods with any matching launcher
+	updatedContainers := getUpdatedContainers(spec.Containers, launcher, volumeMount, settings)
+
+	// Add the sidecar at the end ONLY if the targeted container is in the pod
+	// We skip adding sidecar to pods entirey that don't have the launcher
+	if hasLauncher(spec.Containers, launcher) {
+		updatedContainers = append(updatedContainers, sidecar)
+	}
+	spec.Containers = updatedContainers
+	return nil
+}
+
+// getUpdatedContainers for the object
+func getUpdatedContainers(
+	containers []corev1.Container,
+	launcher string,
+	volumeMount corev1.VolumeMount,
+	settings *orasSettings.OrasCacheSettings,
+) []corev1.Container {
+
 	updatedContainers := []corev1.Container{}
-	for _, container := range pod.Spec.Containers {
+	for _, container := range containers {
 
 		// If launcher defined and this isn't it, skip
 		if launcher != "" && container.Name != launcher {
@@ -105,13 +120,5 @@ func AddSidecar(pod *corev1.Pod, settings *orasSettings.OrasCacheSettings) error
 		container.Args = []string{}
 		updatedContainers = append(updatedContainers, container)
 	}
-
-	// Add the sidecar at the end ONLY if the targeted container is in the pod
-	// We skip adding sidecar to pods entirey that don't have the launcher
-	if hasLauncher(pod, launcher) {
-		updatedContainers = append(updatedContainers, sidecar)
-	}
-
-	pod.Spec.Containers = updatedContainers
-	return nil
+	return updatedContainers
 }

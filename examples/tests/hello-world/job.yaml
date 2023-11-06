@@ -1,0 +1,30 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pi
+spec:
+  template:
+    metadata:
+      annotations:
+       # the name of the cache for the workflow, the name from oras.yaml
+       oras.converged-computing.github.io/oras-cache: orascache-sample
+
+       # The URI for the workflow artifact output. Tag is important here - a steo
+       # in a dag would need to also include input-uri and push/pull based on dag
+       oras.converged-computing.github.io/output-uri: dinosaur/hello-world:perl
+
+       # Dummy example to use hello-world.txt touched in working directory
+       oras.converged-computing.github.io/output-path: perl.txt
+
+       # Pipe output to this path
+       oras.converged-computing.github.io/output-pipe: perl.txt
+
+       # Print all final settings in the log
+       oras.converged-computing.github.io/debug: "true"
+    spec:
+      containers:
+      - name: pi
+        image: perl:5.34.0
+        command: ["/bin/bash", "-c", "perl -Mbignum=bpi -wle print bpi(2000)"]
+      restartPolicy: Never
+  backoffLimit: 4

@@ -39,6 +39,10 @@ spec:
                 default: ghcr.io/oras-project/registry:latest
                 description: Image is the oras registry to deploy
                 type: string
+              object:
+                default: job
+                description: Object to watch (will default to job)
+                type: string
               secret:
                 description: Secret for the registry REGISTRY_HTTP_SECRET
                 type: string

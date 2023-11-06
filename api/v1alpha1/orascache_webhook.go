@@ -13,8 +13,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/converged-computing/oras-operator/pkg/defaults"
 	"github.com/converged-computing/oras-operator/pkg/oras"
 	orasSettings "github.com/converged-computing/oras-operator/pkg/settings"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -25,34 +27,39 @@ import (
 //  kubectl describe mutatingwebhookconfigurations.admissionregistration.k8s.io
 //+kubebuilder:webhook:path=/mutate--v1-pod,mutating=true,failurePolicy=fail,sideEffects=None,groups="",resources=pods,verbs=create,versions=v1,name=morascache.kb.io,admissionReviewVersions=v1
 
-type PodInjector struct {
+type SidecarInjector struct {
 	Cache *OrasCache
 }
 
 func (r *OrasCache) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 	// Add the oras cache to the PodInjector
-	injector := &PodInjector{Cache: r}
+	injector := &SidecarInjector{Cache: r}
 
 	return ctrl.NewWebhookManagedBy(mgr).
+		For(&batchv1.Job{}).
 		For(&corev1.Pod{}).
 		WithDefaulter(injector).
 		Complete()
 }
 
-var _ webhook.CustomDefaulter = &PodInjector{}
+var _ webhook.CustomDefaulter = &SidecarInjector{}
 
 // Default is the expected entrypoint for a webhook
-func (a *PodInjector) Default(ctx context.Context, obj runtime.Object) error {
+func (a *SidecarInjector) Default(ctx context.Context, obj runtime.Object) error {
 	pod, ok := obj.(*corev1.Pod)
 	if !ok {
-		return fmt.Errorf("expected a Pod but got a %T", obj)
+		job, ok := obj.(*batchv1.Job)
+		if !ok {
+			return fmt.Errorf("expected a Pod or Job but got a %T", obj)
+		}
+		return a.InjectJob(job)
 	}
 	return a.InjectPod(pod)
 }
 
 // Default hits the default mutating webhook endpoint
-func (a *PodInjector) InjectPod(pod *corev1.Pod) error {
+func (a *SidecarInjector) InjectPod(pod *corev1.Pod) error {
 
 	// Cut out early if we have no labels
 	if pod.Annotations == nil {
@@ -61,7 +68,7 @@ func (a *PodInjector) InjectPod(pod *corev1.Pod) error {
 	}
 
 	// Parse oras known labels into settings
-	settings := orasSettings.NewOrasCacheSettings(pod)
+	settings := orasSettings.NewOrasCacheSettings(pod.Annotations)
 
 	// Cut out early if no oras identifiers!
 	if !settings.MarkedForOras {
@@ -75,8 +82,50 @@ func (a *PodInjector) InjectPod(pod *corev1.Pod) error {
 		return fmt.Errorf("oras storage was requested but is not valid")
 	}
 
-	// Add the sidecar to the pod
-	oras.AddSidecar(pod, settings)
+	// The selector for the namespaced registry is the namespace
+	if pod.Labels == nil {
+		pod.Labels = map[string]string{}
+	}
+
+	// Even pods without say, the launcher, that are marked should have the network added
+	pod.Labels[defaults.OrasSelectorKey] = pod.ObjectMeta.Namespace
+	oras.AddSidecar(&pod.Spec, pod.ObjectMeta.Namespace, settings)
 	logger.Info(fmt.Sprintf("Pod %s is marked for oras storage.", pod.Name))
+	return nil
+}
+
+// Default hits the default mutating webhook endpoint
+func (a *SidecarInjector) InjectJob(job *batchv1.Job) error {
+
+	// Cut out early if we have no labels
+	if job.Annotations == nil {
+		logger.Info(fmt.Sprintf("Job %s is not marked for oras storage.", job.Name))
+		return nil
+	}
+
+	// Parse oras known labels into settings
+	settings := orasSettings.NewOrasCacheSettings(job.Annotations)
+
+	// Cut out early if no oras identifiers!
+	if !settings.MarkedForOras {
+		logger.Warnf("Pod %s is not marked for oras storage.", job.Name)
+		return nil
+	}
+
+	// Validate, return error if no good here.
+	if !settings.Validate() {
+		logger.Warnf("Pod %s oras storage did not validate.", job.Name)
+		return fmt.Errorf("oras storage was requested but is not valid")
+	}
+
+	// Add the sidecar to the podspec of the job
+	if job.Spec.Template.Labels == nil {
+		job.Spec.Template.Labels = map[string]string{}
+	}
+
+	// Even pods without say, the launcher, that are marked should have the network added
+	job.Spec.Template.Labels[defaults.OrasSelectorKey] = job.ObjectMeta.Namespace
+	oras.AddSidecar(&job.Spec.Template.Spec, job.ObjectMeta.Namespace, settings)
+	logger.Info(fmt.Sprintf("Job %s is marked for oras storage.", job.Name))
 	return nil
 }

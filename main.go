@@ -121,6 +121,8 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "OrasCache")
 		os.Exit(1)
 	}
+
+	// Allow to setup Job or Pod webhook
 	if err = (&api.OrasCache{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "OrasCache")
 		os.Exit(1)

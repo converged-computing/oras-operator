@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/converged-computing/oras-operator/pkg/defaults"
-	corev1 "k8s.io/api/core/v1"
 )
 
 var (
@@ -20,6 +19,7 @@ var (
 		// Files are expected to be copied to/from here
 		"input-path":  {Required: false, NonEmpty: true, Value: defaults.DefaultMissing},
 		"output-path": {Required: false, NonEmpty: true, Value: defaults.DefaultMissing},
+		"output-pipe": {Required: false, NonEmpty: true, Value: defaults.DefaultMissing},
 
 		// Input and output container URIs for input/output artifacts
 		"input-uri":  {Required: false, NonEmpty: true, Value: defaults.DefaultMissing},
@@ -131,7 +131,7 @@ func (s *OrasCacheSettings) Validate() bool {
 }
 
 // NewOrasCacheSettings creates new settings
-func NewOrasCacheSettings(pod *corev1.Pod) *OrasCacheSettings {
+func NewOrasCacheSettings(annotations map[string]string) *OrasCacheSettings {
 
 	// Create settings with defaults
 	wrapper := OrasCacheSettings{}
@@ -141,7 +141,7 @@ func NewOrasCacheSettings(pod *corev1.Pod) *OrasCacheSettings {
 	debug := false
 
 	// Parse all annotations looking for oras cache prefix
-	for key, value := range pod.Annotations {
+	for key, value := range annotations {
 		if strings.HasPrefix(key, defaults.OrasCachePrefix) {
 
 			// The annotation is required to be in format <identifier/field>

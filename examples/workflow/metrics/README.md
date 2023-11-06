@@ -1,7 +1,8 @@
 # Experiments with Metrics
 
 This setup will test running different experiments with the metrics operator, and specifically those that generate output files,
-and using the ORAS operator to push and save them to a local registry.
+and using the ORAS operator to push and save them to a local registry. We will be changing the default watched object from "pod" to
+"job."
 
 ## Cluster
 
