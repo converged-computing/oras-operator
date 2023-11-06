@@ -86,6 +86,7 @@ In that most workflow tools understand inputs and outputs and the DAG, this shou
 |------|-------------|----------|---------|
 | input-path | The path in the container that any requested archive is expected to be extracted to | false | the working directory of the application container |
 | output-path | The output path in the container to save files | false | the working directory of the application container |
+| output-pipe | Pipe the output of your command into this file | false | unset |
 | input-uri | The input unique resource identifier for the registry step, including repository, name, and tag | false | NA will be used if not defined, meaning the step has no inputs |
 | output-uri | The output unique resource identifier for the registry step, including repository, name, and tag | false | NA will be used if not defined, meaning the step has no outputs |
 | oras-cache | The name of the sidecar orchestrator | false | oras |
@@ -118,11 +119,11 @@ You’ll need a Kubernetes cluster to run against. You can use [KIND](https://si
 kind create cluster
 ```
 
-Install the operator (development here) and this include [cert-manager](https://github.com/cert-manager/cert-manager) for webhook certificates:
+Install the operator and this include [cert-manager](https://github.com/cert-manager/cert-manager) for webhook certificates:
 
 ```sh
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.1/cert-manager.yaml
-make test-deploy-recreate
+kubectl apply -f https://raw.githubusercontent.com/converged-computing/oras-operator/main/examples/dist/oras-operator.yaml
 
 # same as...
 make test-deploy
