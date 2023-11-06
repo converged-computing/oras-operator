@@ -51,11 +51,14 @@ You can then look at the logs of each of the containers to see the artifact gene
 
 ## Job with ORAS
 
-Finally, create a job to run Pi. This job shows piping the command into an output file.
+Finally, create a job to do similar. This job shows piping the command into an output file.
 
-```
+```bash
 kubectl apply -f job.yaml
 ```
+
+Note that the annotations are placed on the pod template spec, and not directly on the job.
+
 
 ## Pull Output
 
