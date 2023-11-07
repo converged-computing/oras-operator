@@ -32,8 +32,8 @@ import (
 ////kubebuilder:webhook:path=/mutate-v1-sidecar,mutating=true,failurePolicy=fail,sideEffects=None,groups=core;batch,resources=pods;jobs,verbs=create,versions=v1,name=morascache.kb.io,admissionReviewVersions=v1
 
 // NewMutatingWebhook allows us to keep the sidecarInjector private
-// If it's public it's expored and kubebuilder tries to add to zz_generated_deepcopy
-// and you get all kinds of terrible erors about admission.Decoder missing DeepCopyInto
+// If it's public it's exported and kubebuilder tries to add to zz_generated_deepcopy
+// and you get all kinds of terrible errors about admission.Decoder missing DeepCopyInto
 func NewMutatingWebhook(mgr manager.Manager) *sidecarInjector {
 	return &sidecarInjector{decoder: admission.NewDecoder(mgr.GetScheme())}
 }
