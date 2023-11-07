@@ -28,9 +28,10 @@ This works best for production Kubernetes clusters, and you can start with creat
 kind create cluster
 ```
 
-and then downloading the latest Metrics Operator yaml config, and applying it.
+and then downloading the latest ORAS Operator yaml config, and applying it.
 
 ```bash
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.1/cert-manager.yaml
 kubectl apply -f https://raw.githubusercontent.com/converged-computing/oras-operator/main/examples/dist/oras-operator.yaml
 ```
 
@@ -107,7 +108,6 @@ Currently not supported (but will be soon / if needed):
 
 Note that while the above can be set manually, the expectation is that a workflow tool will do it. For each of the `input-path` and `output-path` we recommend providing
 specific files or directories, and note that if one is not set we use the working directory, which (if this is the root of the container) will result in an error.
-
 
 
 ## Getting Started

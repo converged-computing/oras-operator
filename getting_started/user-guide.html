@@ -623,8 +623,9 @@ the ORAS operator might include (but are not limited to):</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><code>kind<span class="w"> </span>create<span class="w"> </span>cluster
 </code></pre></div>
 </div>
-<p>and then downloading the latest Metrics Operator yaml config, and applying it.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>https://raw.githubusercontent.com/converged-computing/oras-operator/main/examples/dist/oras-operator.yaml
+<p>and then downloading the latest ORAS Operator yaml config, and applying it.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>https://github.com/cert-manager/cert-manager/releases/download/v1.13.1/cert-manager.yaml
+kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>https://raw.githubusercontent.com/converged-computing/oras-operator/main/examples/dist/oras-operator.yaml
 </code></pre></div>
 </div>
 <p>Note that from the repository, this config is generated with:</p>
@@ -784,7 +785,7 @@ and likely we will add more detail as we develop them.</p>
   <small>
     
       Last update:
-      Nov 06, 2023
+      Nov 07, 2023
     
   </small>
 </div>
