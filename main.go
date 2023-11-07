@@ -35,6 +35,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	api "github.com/converged-computing/oras-operator/api/v1alpha1"
 	controllers "github.com/converged-computing/oras-operator/controllers/oras"
@@ -122,11 +124,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	// This can handle a Pod or a Job
-	if err = (&api.OrasCache{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "OrasCache")
-		os.Exit(1)
-	}
+	mgr.GetWebhookServer().Register("/mutate-v1-sidecar", &webhook.Admission{
+		Handler: &api.SidecarInjector{
+			Decoder: admission.NewDecoder(mgr.GetScheme()),
+		},
+	})
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
