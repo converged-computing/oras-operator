@@ -27,11 +27,13 @@ import (
 
 // IMPORTANT: if you use the controller-runtime builder, it will derive this name automatically from the gvk (kind, version, etc. so find the actual created path in the logs)
 // kubectl describe mutatingwebhookconfigurations.admissionregistration.k8s.io
-// Disabled so we manually manage it: config/webhook/manifests.yaml
+// It will also only allow you to describe one object type with For()
+// This is disabled so we manually manage it - multiple types to a list did not work: config/webhook/manifests.yaml
 ////kubebuilder:webhook:path=/mutate-v1-sidecar,mutating=true,failurePolicy=fail,sideEffects=None,groups=core;batch,resources=pods;jobs,verbs=create,versions=v1,name=morascache.kb.io,admissionReviewVersions=v1
 
-// NewMutatingWebhook sets the global decoder and localScheme (once)
-// we can't put these as fields on the struct because Kubebuilder yells at us
+// NewMutatingWebhook allows us to keep the sidecarInjector private
+// If it's public it's expored and kubebuilder tries to add to zz_generated_deepcopy
+// and you get all kinds of terrible erors about admission.Decoder missing DeepCopyInto
 func NewMutatingWebhook(mgr manager.Manager) *sidecarInjector {
 	return &sidecarInjector{decoder: admission.NewDecoder(mgr.GetScheme())}
 }
@@ -62,10 +64,10 @@ func (a *sidecarInjector) Handle(ctx context.Context, req admission.Request) adm
 			return admission.Errored(http.StatusBadRequest, err)
 		}
 
-		// mutate the fields in pod
+		// Mutate the fields in pod
 		marshalledPod, err := json.Marshal(pod)
 		if err != nil {
-			logger.Error("Marshalling object error.", err)
+			logger.Error("Marshalling pod error.", err)
 			return admission.Errored(http.StatusInternalServerError, err)
 		}
 		logger.Info("Admission pod success.")
@@ -73,17 +75,14 @@ func (a *sidecarInjector) Handle(ctx context.Context, req admission.Request) adm
 	}
 
 	// If we get here, we found a job
-	// If we get here, we decoded a pod
 	err = a.InjectJob(job)
 	if err != nil {
 		logger.Error("Inject job error.", err)
 		return admission.Errored(http.StatusBadRequest, err)
 	}
-
-	// mutate the fields in pod
 	marshalledJob, err := json.Marshal(job)
 	if err != nil {
-		logger.Error("Marshalling object error.", err)
+		logger.Error("Marshalling job error.", err)
 		return admission.Errored(http.StatusInternalServerError, err)
 	}
 	logger.Info("Admission job success.")
@@ -105,7 +104,7 @@ func (a *sidecarInjector) Default(ctx context.Context, obj runtime.Object) error
 	return a.InjectPod(pod)
 }
 
-// Default hits the default mutating webhook endpoint
+// InjectPod adds the sidecar container to a pod
 func (a *sidecarInjector) InjectPod(pod *corev1.Pod) error {
 
 	// Cut out early if we have no labels
@@ -141,7 +140,7 @@ func (a *sidecarInjector) InjectPod(pod *corev1.Pod) error {
 	return nil
 }
 
-// Default hits the default mutating webhook endpoint
+// InjectJob adds the sidecar container to the PodTemplateSpec of the Job
 func (a *sidecarInjector) InjectJob(job *batchv1.Job) error {
 
 	// Cut out early if we have no labels
