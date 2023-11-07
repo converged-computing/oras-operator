@@ -29,6 +29,7 @@ import (
 // Disabled so we manually manage it: config/webhook/manifests.yaml
 ////kubebuilder:webhook:path=/mutate-v1-sidecar,mutating=true,failurePolicy=fail,sideEffects=None,groups=core;batch,resources=pods;jobs,verbs=create,versions=v1,name=morascache.kb.io,admissionReviewVersions=v1
 
+// +kubebuilder:object:generate=true
 type SidecarInjector struct {
 	Decoder *admission.Decoder
 	Cache   *OrasCache
