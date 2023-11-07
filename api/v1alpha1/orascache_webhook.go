@@ -11,7 +11,9 @@ package v1alpha1
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"net/http"
 
 	"github.com/converged-computing/oras-operator/pkg/defaults"
 	"github.com/converged-computing/oras-operator/pkg/oras"
@@ -19,47 +21,91 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-// IMPORTANT: the builder will derive this name automatically from the gvk (kind, version, etc. so find the actual created path in the logs)
-//  kubectl describe mutatingwebhookconfigurations.admissionregistration.k8s.io
-//+kubebuilder:webhook:path=/mutate--v1-pod,mutating=true,failurePolicy=fail,sideEffects=None,groups="",resources=pods,verbs=create,versions=v1,name=morascache.kb.io,admissionReviewVersions=v1
+// IMPORTANT: if you use the controller-runtime builder, it will derive this name automatically from the gvk (kind, version, etc. so find the actual created path in the logs)
+// kubectl describe mutatingwebhookconfigurations.admissionregistration.k8s.io
+// It will also only allow you to describe one object type with For()
+// This is disabled so we manually manage it - multiple types to a list did not work: config/webhook/manifests.yaml
+////kubebuilder:webhook:path=/mutate-v1-sidecar,mutating=true,failurePolicy=fail,sideEffects=None,groups=core;batch,resources=pods;jobs,verbs=create,versions=v1,name=morascache.kb.io,admissionReviewVersions=v1
 
-type SidecarInjector struct {
-	Cache *OrasCache
+// NewMutatingWebhook allows us to keep the sidecarInjector private
+// If it's public it's expored and kubebuilder tries to add to zz_generated_deepcopy
+// and you get all kinds of terrible erors about admission.Decoder missing DeepCopyInto
+func NewMutatingWebhook(mgr manager.Manager) *sidecarInjector {
+	return &sidecarInjector{decoder: admission.NewDecoder(mgr.GetScheme())}
 }
 
-func (r *OrasCache) SetupWebhookWithManager(mgr ctrl.Manager) error {
-
-	// Add the oras cache to the PodInjector
-	injector := &SidecarInjector{Cache: r}
-
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(&batchv1.Job{}).
-		For(&corev1.Pod{}).
-		WithDefaulter(injector).
-		Complete()
+type sidecarInjector struct {
+	decoder *admission.Decoder
 }
 
-var _ webhook.CustomDefaulter = &SidecarInjector{}
+func (a *sidecarInjector) Handle(ctx context.Context, req admission.Request) admission.Response {
+
+	// First try for job
+	job := &batchv1.Job{}
+	err := a.decoder.Decode(req, job)
+	if err != nil {
+
+		// Try for a pod next
+		pod := &corev1.Pod{}
+		err := a.decoder.Decode(req, pod)
+		if err != nil {
+			logger.Error("Admission error.", err)
+			return admission.Errored(http.StatusBadRequest, err)
+		}
+
+		// If we get here, we decoded a pod
+		err = a.InjectPod(pod)
+		if err != nil {
+			logger.Error("Inject pod error.", err)
+			return admission.Errored(http.StatusBadRequest, err)
+		}
+
+		// Mutate the fields in pod
+		marshalledPod, err := json.Marshal(pod)
+		if err != nil {
+			logger.Error("Marshalling pod error.", err)
+			return admission.Errored(http.StatusInternalServerError, err)
+		}
+		logger.Info("Admission pod success.")
+		return admission.PatchResponseFromRaw(req.Object.Raw, marshalledPod)
+	}
+
+	// If we get here, we found a job
+	err = a.InjectJob(job)
+	if err != nil {
+		logger.Error("Inject job error.", err)
+		return admission.Errored(http.StatusBadRequest, err)
+	}
+	marshalledJob, err := json.Marshal(job)
+	if err != nil {
+		logger.Error("Marshalling job error.", err)
+		return admission.Errored(http.StatusInternalServerError, err)
+	}
+	logger.Info("Admission job success.")
+	return admission.PatchResponseFromRaw(req.Object.Raw, marshalledJob)
+}
 
 // Default is the expected entrypoint for a webhook
-func (a *SidecarInjector) Default(ctx context.Context, obj runtime.Object) error {
+func (a *sidecarInjector) Default(ctx context.Context, obj runtime.Object) error {
 	pod, ok := obj.(*corev1.Pod)
 	if !ok {
 		job, ok := obj.(*batchv1.Job)
 		if !ok {
 			return fmt.Errorf("expected a Pod or Job but got a %T", obj)
 		}
+		logger.Info(fmt.Sprintf("Job %s is marked for ORAS registry cache.", job.Name))
 		return a.InjectJob(job)
 	}
+	logger.Info(fmt.Sprintf("Pod %s is marked for ORAS registry cache.", pod.Name))
 	return a.InjectPod(pod)
 }
 
-// Default hits the default mutating webhook endpoint
-func (a *SidecarInjector) InjectPod(pod *corev1.Pod) error {
+// InjectPod adds the sidecar container to a pod
+func (a *sidecarInjector) InjectPod(pod *corev1.Pod) error {
 
 	// Cut out early if we have no labels
 	if pod.Annotations == nil {
@@ -94,8 +140,8 @@ func (a *SidecarInjector) InjectPod(pod *corev1.Pod) error {
 	return nil
 }
 
-// Default hits the default mutating webhook endpoint
-func (a *SidecarInjector) InjectJob(job *batchv1.Job) error {
+// InjectJob adds the sidecar container to the PodTemplateSpec of the Job
+func (a *sidecarInjector) InjectJob(job *batchv1.Job) error {
 
 	// Cut out early if we have no labels
 	if job.Annotations == nil {
@@ -108,13 +154,13 @@ func (a *SidecarInjector) InjectJob(job *batchv1.Job) error {
 
 	// Cut out early if no oras identifiers!
 	if !settings.MarkedForOras {
-		logger.Warnf("Pod %s is not marked for oras storage.", job.Name)
+		logger.Warnf("Job %s is not marked for oras storage.", job.Name)
 		return nil
 	}
 
 	// Validate, return error if no good here.
 	if !settings.Validate() {
-		logger.Warnf("Pod %s oras storage did not validate.", job.Name)
+		logger.Warnf("Job %s oras storage did not validate.", job.Name)
 		return fmt.Errorf("oras storage was requested but is not valid")
 	}
 
@@ -123,7 +169,7 @@ func (a *SidecarInjector) InjectJob(job *batchv1.Job) error {
 		job.Spec.Template.Labels = map[string]string{}
 	}
 
-	// Even pods without say, the launcher, that are marked should have the network added
+	// Add network to spec template so all pods are targeted
 	job.Spec.Template.Labels[defaults.OrasSelectorKey] = job.ObjectMeta.Namespace
 	oras.AddSidecar(&job.Spec.Template.Spec, job.ObjectMeta.Namespace, settings)
 	logger.Info(fmt.Sprintf("Job %s is marked for oras storage.", job.Name))

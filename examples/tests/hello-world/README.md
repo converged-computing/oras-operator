@@ -9,6 +9,14 @@ And a job that will accomplish the same:
 
 - [job.yaml](job.yaml)
 
+
+Install!
+
+```bash
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.1/cert-manager.yaml
+kubectl apply -f https://raw.githubusercontent.com/converged-computing/oras-operator/main/examples/dist/oras-operator.yaml
+```
+
 Let's create our registry in the default namespace:
 
 ```bash
@@ -57,8 +65,8 @@ Finally, create a job to do similar. This job shows piping the command into an o
 kubectl apply -f job.yaml
 ```
 
-Note that the annotations are placed on the pod template spec, and not directly on the job.
-
+Note that the annotations are placed on the job spec, and not directly on the pod. This ensures
+that they are passed down to pods, but not provided a second time (to trigger the operator twice).
 
 ## Pull Output
 
@@ -80,4 +88,8 @@ Downloading d2164606501f .
 Downloaded  d2164606501f .
 Pulled [registry] localhost:5000/dinosaur/hello-world:latest
 Digest: sha256:9efa0709ca99b09f68f2ed90a43aaf5feebe69d7158d40fc2025785811f166cb
+```
+```bash
+$ cat pancakes.txt 
+blueberry
 ```
