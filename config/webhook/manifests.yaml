@@ -16,8 +16,9 @@ webhooks:
   name: morascache.kb.io
   rules:
   - apiGroups:
-    - core
-    - batch
+    - ""
+    - "core"
+    - "batch"
     apiVersions:
     - v1
     operations:

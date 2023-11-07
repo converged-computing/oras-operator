@@ -36,7 +36,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	api "github.com/converged-computing/oras-operator/api/v1alpha1"
 	controllers "github.com/converged-computing/oras-operator/controllers/oras"
@@ -125,9 +124,7 @@ func main() {
 	}
 
 	mgr.GetWebhookServer().Register("/mutate-v1-sidecar", &webhook.Admission{
-		Handler: &api.SidecarInjector{
-			Decoder: admission.NewDecoder(mgr.GetScheme()),
-		},
+		Handler: api.NewMutatingWebhook(mgr),
 	})
 
 	//+kubebuilder:scaffold:builder

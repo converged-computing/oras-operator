@@ -21,6 +21,7 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -29,22 +30,26 @@ import (
 // Disabled so we manually manage it: config/webhook/manifests.yaml
 ////kubebuilder:webhook:path=/mutate-v1-sidecar,mutating=true,failurePolicy=fail,sideEffects=None,groups=core;batch,resources=pods;jobs,verbs=create,versions=v1,name=morascache.kb.io,admissionReviewVersions=v1
 
-// +kubebuilder:object:generate=true
-type SidecarInjector struct {
-	Decoder *admission.Decoder
-	Cache   *OrasCache
+// NewMutatingWebhook sets the global decoder and localScheme (once)
+// we can't put these as fields on the struct because Kubebuilder yells at us
+func NewMutatingWebhook(mgr manager.Manager) *sidecarInjector {
+	return &sidecarInjector{decoder: admission.NewDecoder(mgr.GetScheme())}
 }
 
-func (a *SidecarInjector) Handle(ctx context.Context, req admission.Request) admission.Response {
+type sidecarInjector struct {
+	decoder *admission.Decoder
+}
+
+func (a *sidecarInjector) Handle(ctx context.Context, req admission.Request) admission.Response {
 
 	// First try for job
 	job := &batchv1.Job{}
-	err := a.Decoder.Decode(req, job)
+	err := a.decoder.Decode(req, job)
 	if err != nil {
 
 		// Try for a pod next
 		pod := &corev1.Pod{}
-		err := a.Decoder.Decode(req, pod)
+		err := a.decoder.Decode(req, pod)
 		if err != nil {
 			logger.Error("Admission error.", err)
 			return admission.Errored(http.StatusBadRequest, err)
@@ -86,7 +91,7 @@ func (a *SidecarInjector) Handle(ctx context.Context, req admission.Request) adm
 }
 
 // Default is the expected entrypoint for a webhook
-func (a *SidecarInjector) Default(ctx context.Context, obj runtime.Object) error {
+func (a *sidecarInjector) Default(ctx context.Context, obj runtime.Object) error {
 	pod, ok := obj.(*corev1.Pod)
 	if !ok {
 		job, ok := obj.(*batchv1.Job)
@@ -101,7 +106,7 @@ func (a *SidecarInjector) Default(ctx context.Context, obj runtime.Object) error
 }
 
 // Default hits the default mutating webhook endpoint
-func (a *SidecarInjector) InjectPod(pod *corev1.Pod) error {
+func (a *sidecarInjector) InjectPod(pod *corev1.Pod) error {
 
 	// Cut out early if we have no labels
 	if pod.Annotations == nil {
@@ -137,7 +142,7 @@ func (a *SidecarInjector) InjectPod(pod *corev1.Pod) error {
 }
 
 // Default hits the default mutating webhook endpoint
-func (a *SidecarInjector) InjectJob(job *batchv1.Job) error {
+func (a *sidecarInjector) InjectJob(job *batchv1.Job) error {
 
 	// Cut out early if we have no labels
 	if job.Annotations == nil {

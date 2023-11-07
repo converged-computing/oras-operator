@@ -651,13 +651,14 @@ webhooks:
   name: morascache.kb.io
   rules:
   - apiGroups:
-    - batch
+    - ""
     - core
+    - batch
     apiVersions:
     - v1
     operations:
     - CREATE
     resources:
-    - jobs
     - pods
+    - jobs
   sideEffects: None
