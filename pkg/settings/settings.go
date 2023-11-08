@@ -22,7 +22,8 @@ var (
 		"output-pipe": {Required: false, NonEmpty: true, Value: defaults.DefaultMissing},
 
 		// Input and output container URIs for input/output artifacts
-		"input-uri":  {Required: false, NonEmpty: true, Value: defaults.DefaultMissing},
+		// The input URI can be a listing (pulling from one or more dependnecy steps)
+		"input-uri":  {Required: false, NonEmpty: true, Listing: true, Value: defaults.DefaultMissing},
 		"output-uri": {Required: false, NonEmpty: true, Value: defaults.DefaultMissing},
 
 		// The name of the sidecar orchestrator
@@ -48,11 +49,47 @@ type OrasCacheSetting struct {
 
 	// If required (and provided) it cannot be empty
 	NonEmpty bool
-	Value    string
+
+	// Listings
+	Listing bool
+	Values  []string
+
+	Value string
 }
 
 // Oras Cache Settings are parsed from annotations
 type Settings map[string]OrasCacheSetting
+
+type ParsedSetting struct {
+	IsList bool
+	Field  string
+}
+
+// parseAnnotation handles parsing an ORAS operator annotation field into the field
+// We also determine if it is a list.
+func parseAnnotation(key string) *ParsedSetting {
+
+	// If there are two slashes, this indicates a list item
+	var field string
+
+	// Indicates that this is a list value
+	listValue := false
+	if strings.Count(key, "/") == 2 {
+
+		// We don't currently use the last identifier but could
+		parts := strings.SplitN(key, "/", 3)
+		field = parts[1]
+		listValue = true
+	} else {
+		parts := strings.SplitN(key, "/", 2)
+		field = parts[1]
+	}
+
+	return &ParsedSetting{
+		IsList: listValue,
+		Field:  field,
+	}
+}
 
 type OrasCacheSettings struct {
 	MarkedForOras bool
@@ -70,6 +107,16 @@ func (s *OrasCacheSettings) Get(name string) string {
 	return setting.Value
 }
 
+func (s *OrasCacheSettings) GetList(name string) []string {
+	setting, ok := s.Settings[name]
+
+	// If not defined, return NA
+	if !ok {
+		return getDefaultListSetting(name)
+	}
+	return setting.Values
+}
+
 // getDefaultSetting gets the default setting, if exists.
 func getDefaultSetting(name string) string {
 
@@ -83,6 +130,19 @@ func getDefaultSetting(name string) string {
 	return ""
 }
 
+// getDefaultSetting gets the default setting, if exists.
+func getDefaultListSetting(name string) []string {
+
+	setting, ok := defaultSettings[name]
+
+	// If we know the setting, return the default value
+	if ok {
+		return setting.Values
+	}
+	// Otherwise we have no idea.
+	return []string{}
+}
+
 // PrintSettings print all settings if debug mode is on
 func (s *OrasCacheSettings) PrintSettings() {
 	for name, setting := range s.Settings {
@@ -94,18 +154,24 @@ func (s *OrasCacheSettings) Validate() bool {
 
 	// Show the user the settings (for debugging)
 	logger.Info(s.Settings)
-	for key, defaultSetting := range defaultSettings {
+	for key, ds := range defaultSettings {
 
 		// Retrieve the default, no go if required
 		setting, ok := s.Settings[key]
 
 		// If we don't have it, and it's required but a default provided
-		if !ok && defaultSetting.Required && defaultSetting.Value != "" {
-			s.Settings[key] = defaultSetting
+		if !ok && ds.Required && !ds.Listing && ds.Value != "" {
+			s.Settings[key] = ds
 			continue
 		}
 
-		if !ok && defaultSetting.Required {
+		// Same, but a listing
+		if !ok && ds.Required && ds.Listing && len(ds.Values) == 0 {
+			s.Settings[key] = ds
+			continue
+		}
+
+		if !ok && ds.Required {
 			logger.Warnf("The %s/%s annotation is required", defaults.OrasCachePrefix, key)
 		}
 
@@ -113,7 +179,11 @@ func (s *OrasCacheSettings) Validate() bool {
 		if !ok {
 			continue
 		}
-		if defaultSetting.NonEmpty && setting.Value == "" {
+		if ds.NonEmpty && !ds.Listing && setting.Value == "" {
+			logger.Warnf("The %s/%s is empty, and cannot be.", defaults.OrasCachePrefix, key)
+			return false
+		}
+		if ds.NonEmpty && ds.Listing && len(setting.Values) == 0 {
 			logger.Warnf("The %s/%s is empty, and cannot be.", defaults.OrasCachePrefix, key)
 			return false
 		}
@@ -150,13 +220,12 @@ func NewOrasCacheSettings(annotations map[string]string) *OrasCacheSettings {
 				continue
 			}
 
-			parts := strings.SplitN(key, "/", 2)
-			field := parts[1]
-			if field == "debug" && value == "true" {
+			parsed := parseAnnotation(key)
+			if parsed.Field == "debug" && parsed.Value == "true" {
 				debug = true
 			}
 
-			defaultSetting, ok := defaultSettings[field]
+			defaultSetting, ok := defaultSettings[parsed.Field]
 			if !ok {
 				logger.Warnf("Setting %s is not known the the oras operator.", key)
 				continue
@@ -164,8 +233,17 @@ func NewOrasCacheSettings(annotations map[string]string) *OrasCacheSettings {
 			// Don't add the value if an empty string
 			// TODO double check this does not alter default settings
 			wrapper.MarkedForOras = true
-			defaultSetting.Value = value
-			settings[field] = defaultSetting
+
+			// Add a regular or list value
+			if parsed.IsList {
+				if defaultSetting.Values == nil {
+					defaultSetting.Values = []string{}
+				}
+				defaultSetting.Values = append(defaultSetting.Values, value)
+			} else {
+				defaultSetting.Value = value
+			}
+			settings[parsed.Field] = defaultSetting
 		}
 	}
 	wrapper.Settings = settings

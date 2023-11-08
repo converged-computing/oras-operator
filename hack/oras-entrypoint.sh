@@ -4,19 +4,29 @@ echo "Expecting: <pull-from> <push-to>"
 echo "Full provided set of arguments are $@"
 
 # The command is the remainder of the script $@
-pullfrom="${1}"
-pushto="${2}"
-echo "Artifact URI to retrieve is: ${pullfrom}"
+pushto="${1}"
 echo "Artifact URI to push to is: ${pushto}"
+shift
+
+# We will get an unknown number of inputs
+pullfrom="${1}"
+shift
 
 # Create inputs artifact directory
 mkdir -p /mnt/oras/inputs /mnt/oras/outputs
-if [[ "${pullfrom}" != "NA" ]]; then
+
+while [[ "${pullfrom}" != "NA" ]]; don
+    echo "Artifact URI to retrieve is: ${pullfrom}"
     cd /mnt/oras/inputs
-    oras pull ${pushto} --plain-http
-    echo "Pulled inputs to /mnt/oras/inputs"
+    oras pull ${pullfrom} --plain-http
+    echo "Pulled ${pullfrom} to /mnt/oras/inputs"
+    pullfrom="${1}"
+    if [[ "${pullfrom}" == "" ]]; then
+        echo "Hit last artifact to pull."
+        pullfrom="NA"
+    fi
     ls -l
-fi
+done
 
 # indicate to application we are ready to run!
 touch /mnt/oras/oras-operator-init.txt
