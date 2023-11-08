@@ -15,7 +15,8 @@ shift
 # Create inputs artifact directory
 mkdir -p /mnt/oras/inputs /mnt/oras/outputs
 
-while [[ "${pullfrom}" != "NA" ]]; don
+while [[ "${pullfrom}" != "NA" ]] 
+  do
     echo "Artifact URI to retrieve is: ${pullfrom}"
     cd /mnt/oras/inputs
     oras pull ${pullfrom} --plain-http

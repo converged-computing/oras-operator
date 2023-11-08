@@ -221,7 +221,7 @@ func NewOrasCacheSettings(annotations map[string]string) *OrasCacheSettings {
 			}
 
 			parsed := parseAnnotation(key)
-			if parsed.Field == "debug" && parsed.Value == "true" {
+			if parsed.Field == "debug" && value == "true" {
 				debug = true
 			}
 
