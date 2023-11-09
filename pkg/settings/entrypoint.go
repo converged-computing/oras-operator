@@ -23,23 +23,33 @@ func (s *OrasCacheSettings) GetOrasEntrypoint(namespace string) string {
 
 	// This is a stateful set so we assume always index 0. Assume same port for now
 	registry := fmt.Sprintf("%s-0.%s.%s.svc.cluster.local:5000", cacheName, cacheName, namespace)
-	pullFromURI := s.Get("input-uri")
+
+	// This is a list because we can pull more than one input
+	pullFromURI := s.GetList("input-uri")
 	pushToURI := s.Get("output-uri")
 
 	// Unique name for script
 	n := "oras-run-cache.sh"
 
 	// Assemble pull to and from
-	var pullFrom, pushTo string = "NA", "NA"
-	if pullFromURI != "NA" {
-		pullFrom = fmt.Sprintf("%s/%s", registry, pullFromURI)
+	var pullFrom, pushTo string = "", "NA"
+
+	// Do we have nothing to pull from?
+	if len(pullFromURI) == 0 {
+		pullFrom = "NA"
+	} else {
+		// Add all uris to the list
+		for _, uri := range pullFromURI {
+			uri = fmt.Sprintf("%s/%s", registry, uri)
+			pullFrom += fmt.Sprintf(" %s", uri)
+		}
 	}
 	if pushToURI != "NA" {
 		pushTo = fmt.Sprintf("%s/%s", registry, pushToURI)
 	}
 
 	// Ensure we have wget
-	orasEntrypoint := fmt.Sprintf("%s wget --no-cache -O %s %s && chmod +x %s && ./%s %s %s", updates, n, orasScript, n, n, pullFrom, pushTo)
+	orasEntrypoint := fmt.Sprintf("%s wget --no-cache -O %s %s && chmod +x %s && ./%s %s %s", updates, n, orasScript, n, n, pushTo, pullFrom)
 	logger.Infof("Oras entrypoint: %s\n", orasEntrypoint)
 	return orasEntrypoint
 

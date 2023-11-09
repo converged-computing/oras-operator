@@ -80,35 +80,108 @@ TEST SUITE: None
 
 ### Annotations
 
-The Oras Operator works by way of deploying an ORAS (OCI Registry as Storage) Registry to a namespace, and then the workflow tool can add annotations to pods to control how artifacts are cached (retrieved and saved for subsequent steps). 
-In that most workflow tools understand inputs and outputs and the DAG, this should be feasible to do. Annotations and their defaults include:
+The Oras Operator works by way of deploying an ORAS (OCI Registry as Storage) Registry to a namespace, and then the workflow tool can add annotations to pods or jobs to control how artifacts are cached (retrieved and saved for subsequent steps). 
+In that most workflow tools understand inputs and outputs and the DAG, this should be feasible to do. Here are example annotations for pods and jobs, first a pod:
 
-| Name | Description | Required | Default |
-|------|-------------|----------|---------|
-| input-path | The path in the container that any requested archive is expected to be extracted to | false | the working directory of the application container |
-| output-path | The output path in the container to save files | false | the working directory of the application container |
-| output-pipe | Pipe the output of your command into this file | false | unset |
-| input-uri | The input unique resource identifier for the registry step, including repository, name, and tag | false | NA will be used if not defined, meaning the step has no inputs |
-| output-uri | The output unique resource identifier for the registry step, including repository, name, and tag | false | NA will be used if not defined, meaning the step has no outputs |
-| oras-cache | The name of the sidecar orchestrator | false | oras |
-| oras-container | The container with oras to run for the service | false | ghcr.io/oras-project/oras:v1.1.0 |
-| container | The name of the launcher container | false | assumes the first container found requires the launcher |
-| entrypoint | The https address of the application entrypoint to wget | false | [entrypoint.sh](https://raw.githubusercontent.com/converged-computing/oras-operator/main/hack/entrypoint.sh) |
-| oras-entrypoint | The https address of the oras cache sidecar entrypoint to wget | false | [oras-entrypoint.sh](https://raw.githubusercontent.com/converged-computing/oras-operator/main/hack/oras-entrypoint.sh) |
-| debug | Print all discovered settings in the operator log | false | "false" |
 
+```yaml
+kind: Pod
+apiVersion: v1
+metadata:
+  name: hello-world-1
+  annotations:
+     # the name of the cache for the workflow, the name from oras.yaml
+     oras.converged-computing.github.io/oras-cache: orascache-sample
+
+     # This is how to ask for more than one input to be extracted to the same place
+     oras.converged-computing.github.io/input-uri: dinosaur/hello-world:input
+     oras.converged-computing.github.io/output-uri: dinosaur/hello-world:output
+
+     # Print all final settings in the log
+     oras.converged-computing.github.io/debug: "true"
+```
+
+The above is very simplistic, and will expect to prepare the workspace (the working directory or "input-path" annotation of the application container) with an extraction of
+the "input-uri" annotation. Here is an example with a job:
+
+```yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: breakfast
+  annotations:
+    # the name of the cache for the workflow, the name from oras.yaml
+    oras.converged-computing.github.io/oras-cache: orascache-sample
+
+    # The URI for the workflow artifact output. Tag is important here - a steo
+    # in a dag would need to also include input-uri and push/pull based on dag
+    oras.converged-computing.github.io/output-uri: dinosaur/hello-world:pancakes
+
+    # Dummy example to use hello-world.txt touched in working directory
+    oras.converged-computing.github.io/output-path: pancakes.txt
+
+    # Pipe output to this path
+    oras.converged-computing.github.io/output-pipe: pancakes.txt
+
+    # Print all final settings in the log
+    oras.converged-computing.github.io/debug: "true"
+
+spec:
+  template:
+    spec:
+      containers:
+      - name: breakfast
+        image: perl:5.34.0
+        command: [echo, blueberry]
+      restartPolicy: Never
+```
+
+Note that the annotation above is on the level of the job, and will be carried forward to edit the JobTemplateSpec (without adding the annotations again).
+We do this to ensure that the operator isn't triggered twice. E.g., if you were to put the annotations on the Pod template spec, it might trigger adding the sidecar
+once, first for the job, and then for the underlying pod(s) it creates. Annotations and their defaults include:
+
+| Name | Description | Required | List | Default |
+|------|-------------|----------|------|---------|
+| input-path | The path in the container that any requested archive is expected to be extracted to | false | false | the working directory of the application container |
+| output-path | The output path in the container to save files | false | false |the working directory of the application container |
+| output-pipe | Pipe the output of your command into this file | false | false |unset |
+| input-uri | The input unique resource identifier for the registry step, including repository, name, and tag | false | true |NA will be used if not defined, meaning the step has no inputs |
+| output-uri | The output unique resource identifier for the registry step, including repository, name, and tag | false | false |NA will be used if not defined, meaning the step has no outputs |
+| oras-cache | The name of the sidecar orchestrator | false | false | oras |
+| oras-container | The container with oras to run for the service | false | false | ghcr.io/oras-project/oras:v1.1.0 |
+| container | The name of the launcher container | false | false | assumes the first container found requires the launcher |
+| entrypoint | The https address of the application entrypoint to wget | false | false | [entrypoint.sh](https://raw.githubusercontent.com/converged-computing/oras-operator/main/hack/entrypoint.sh) |
+| oras-entrypoint | The https address of the oras cache sidecar entrypoint to wget | false | false | [oras-entrypoint.sh](https://raw.githubusercontent.com/converged-computing/oras-operator/main/hack/oras-entrypoint.sh) |
+| debug | Print all discovered settings in the operator log | false | false | "false" |
 
 There should not be a need to change the oras-cache (sidecar container) unless for some reason you have another container in the pod also called oras. It is exposed for this rare case.
 
+Note that when List is true, this means the annotation can be provided as a list, and more than one value can be added with the pattern `<prefix>/<field>_<count>`. Currently the only supported list field is `input-uri`, anticipating that multiple parent steps might feed into one child step.
+
+```yaml
+kind: Pod
+apiVersion: v1
+metadata:
+  name: hello-world-3
+  annotations:
+     # the name of the cache for the workflow, the name from oras.yaml
+     oras.converged-computing.github.io/oras-cache: orascache-sample
+
+     # This is how to ask for more than one input to be extracted to the same place
+     oras.converged-computing.github.io/input-uri_1: dinosaur/hello-world:one
+     oras.converged-computing.github.io/input-uri_2: dinosaur/hello-world:two
+
+     # Print all final settings in the log
+     oras.converged-computing.github.io/debug: "true"
+```
+
 Currently not supported (but will be soon / if needed):
 
-- An ability to save specific (single) files or groups of files. It's much easier to target a directory so we are taking that approach to start.
-- A target of the mutating admission webhook for job or jobset instead of pod. The pod target might not scale, but Job has a better chance.
 - More than one launcher container in a pod
 
 Note that while the above can be set manually, the expectation is that a workflow tool will do it. For each of the `input-path` and `output-path` we recommend providing
 specific files or directories, and note that if one is not set we use the working directory, which (if this is the root of the container) will result in an error.
-
+In the case that no output-path is specified, we assume there is nothing to copy (and you should not set output-uri).
 
 ## Getting Started
 

@@ -45,10 +45,8 @@ fi
 # indicate we are done
 mkdir -p /mnt/oras/outputs
 
-# Same with output - either copy from working directory, or as indicated
-if [[ "${artifactOutput}" == "NA" ]]; then
-    cp -R . /mnt/oras/outputs/
-else
+# Output requires the directory to be defined, otherwise we assume none
+if [[ "${artifactOutput}" != "NA" ]]; then
     cp -R ${artifactOutput} /mnt/oras/outputs/
 fi
 
