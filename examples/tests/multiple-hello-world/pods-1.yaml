@@ -15,8 +15,6 @@ metadata:
 
      # Print all final settings in the log
      oras.converged-computing.github.io/debug: "true"
-     oras.converged-computing.github.io/oras-entrypoint: https://raw.githubusercontent.com/converged-computing/oras-operator/9d5892c8f8d933db991e64df52853ea97395e30e/hack/oras-entrypoint.sh
-
 
 spec:
   containers:
@@ -43,7 +41,6 @@ metadata:
 
      # Print all final settings in the log
      oras.converged-computing.github.io/debug: "true"
-     oras.converged-computing.github.io/oras-entrypoint: https://raw.githubusercontent.com/converged-computing/oras-operator/9d5892c8f8d933db991e64df52853ea97395e30e/hack/oras-entrypoint.sh
 spec:
   containers:
     - name: my-container
