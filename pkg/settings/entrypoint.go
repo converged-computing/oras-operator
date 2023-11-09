@@ -26,7 +26,6 @@ func (s *OrasCacheSettings) GetOrasEntrypoint(namespace string) string {
 
 	// This is a list because we can pull more than one input
 	pullFromURI := s.GetList("input-uri")
-	logger.Info("PULL FROM URI", pullFromURI)
 	pushToURI := s.Get("output-uri")
 
 	// Unique name for script
