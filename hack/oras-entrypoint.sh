@@ -5,23 +5,25 @@ echo "Full provided set of arguments are $@"
 
 # The command is the remainder of the script $@
 pushto="${1}"
-echo "Artifact URI to push to is: ${pushto}"
 shift
 
 # We will get an unknown number of inputs
 pullfrom="${1}"
 shift
 
+echo "Artifact URI to push to is: ${pushto}"
+echo "Artifact URI to pull from is: ${pullfrom}"
+
 # Create inputs artifact directory
 mkdir -p /mnt/oras/inputs /mnt/oras/outputs
 
-while [[ "${pullfrom}" != "NA" ]] 
-  do
+while [ "${pullfrom}" != "NA" ]; do
     echo "Artifact URI to retrieve is: ${pullfrom}"
     cd /mnt/oras/inputs
     oras pull ${pullfrom} --plain-http
     echo "Pulled ${pullfrom} to /mnt/oras/inputs"
     pullfrom="${1}"
+    shift
     if [[ "${pullfrom}" == "" ]]; then
         echo "Hit last artifact to pull."
         pullfrom="NA"

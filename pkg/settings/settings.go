@@ -13,8 +13,9 @@ import (
 	"github.com/converged-computing/oras-operator/pkg/defaults"
 )
 
-var (
-	defaultSettings = map[string]OrasCacheSetting{
+// getDefaultSettings ensures that we don't update a global variable
+func getDefaultSettings() map[string]OrasCacheSetting {
+	return map[string]OrasCacheSetting{
 
 		// Files are expected to be copied to/from here
 		"input-path":  {Required: false, NonEmpty: true, Value: defaults.DefaultMissing},
@@ -23,7 +24,7 @@ var (
 
 		// Input and output container URIs for input/output artifacts
 		// The input URI can be a listing (pulling from one or more dependnecy steps)
-		"input-uri":  {Required: false, NonEmpty: true, Listing: true, Value: defaults.DefaultMissing},
+		"input-uri":  {Required: false, NonEmpty: true, Listing: true, Values: []string{}},
 		"output-uri": {Required: false, NonEmpty: true, Value: defaults.DefaultMissing},
 
 		// The name of the sidecar orchestrator
@@ -42,7 +43,7 @@ var (
 		"entrypoint":      {Required: false, NonEmpty: true, Value: defaults.ApplicationEntrypoint},
 		"oras-entrypoint": {Required: false, NonEmpty: true, Value: defaults.OrasEntrypoint},
 	}
-)
+}
 
 type OrasCacheSetting struct {
 	Required bool
@@ -74,11 +75,15 @@ func parseAnnotation(key string) *ParsedSetting {
 
 	// Indicates that this is a list value
 	listValue := false
-	if strings.Count(key, "/") == 2 {
+
+	// Pattern is to allow > 1 with <prefix>/<field>_<count>
+	if strings.Contains(key, "_") {
 
 		// We don't currently use the last identifier but could
-		parts := strings.SplitN(key, "/", 3)
+		parts := strings.SplitN(key, "/", 2)
 		field = parts[1]
+		parts = strings.SplitN(field, "_", 2)
+		field = parts[0]
 		listValue = true
 	} else {
 		parts := strings.SplitN(key, "/", 2)
@@ -92,8 +97,9 @@ func parseAnnotation(key string) *ParsedSetting {
 }
 
 type OrasCacheSettings struct {
-	MarkedForOras bool
-	Settings      Settings
+	MarkedForOras   bool
+	Settings        Settings
+	DefaultSettings map[string]OrasCacheSetting
 }
 
 // Get a named setting
@@ -102,7 +108,7 @@ func (s *OrasCacheSettings) Get(name string) string {
 
 	// If not defined, return NA
 	if !ok {
-		return getDefaultSetting(name)
+		return s.getDefaultSetting(name)
 	}
 	return setting.Value
 }
@@ -112,15 +118,15 @@ func (s *OrasCacheSettings) GetList(name string) []string {
 
 	// If not defined, return NA
 	if !ok {
-		return getDefaultListSetting(name)
+		return s.getDefaultListSetting(name)
 	}
 	return setting.Values
 }
 
 // getDefaultSetting gets the default setting, if exists.
-func getDefaultSetting(name string) string {
+func (s *OrasCacheSettings) getDefaultSetting(name string) string {
 
-	setting, ok := defaultSettings[name]
+	setting, ok := s.DefaultSettings[name]
 
 	// If we know the setting, return the default value
 	if ok {
@@ -131,9 +137,9 @@ func getDefaultSetting(name string) string {
 }
 
 // getDefaultSetting gets the default setting, if exists.
-func getDefaultListSetting(name string) []string {
+func (s *OrasCacheSettings) getDefaultListSetting(name string) []string {
 
-	setting, ok := defaultSettings[name]
+	setting, ok := s.DefaultSettings[name]
 
 	// If we know the setting, return the default value
 	if ok {
@@ -146,7 +152,11 @@ func getDefaultListSetting(name string) []string {
 // PrintSettings print all settings if debug mode is on
 func (s *OrasCacheSettings) PrintSettings() {
 	for name, setting := range s.Settings {
-		logger.Infof("🌟️ %s: %s", name, setting.Value)
+		if setting.Listing {
+			logger.Infof("🌟️ %s: %s", name, strings.Join(setting.Values, "\n"))
+		} else {
+			logger.Infof("🌟️ %s: %s", name, setting.Value)
+		}
 	}
 }
 
@@ -154,7 +164,7 @@ func (s *OrasCacheSettings) Validate() bool {
 
 	// Show the user the settings (for debugging)
 	logger.Info(s.Settings)
-	for key, ds := range defaultSettings {
+	for key, ds := range s.DefaultSettings {
 
 		// Retrieve the default, no go if required
 		setting, ok := s.Settings[key]
@@ -189,14 +199,7 @@ func (s *OrasCacheSettings) Validate() bool {
 		}
 	}
 
-	// One of input or output must be defined
-	_, inputOk := s.Settings["input-path"]
-	_, outputOk := s.Settings["output-path"]
-
-	if !inputOk && !outputOk {
-		logger.Warn("One of input-path or output-path is required.")
-		return false
-	}
+	// We don't require either of input or output paths
 	return true
 }
 
@@ -206,6 +209,7 @@ func NewOrasCacheSettings(annotations map[string]string) *OrasCacheSettings {
 	// Create settings with defaults
 	wrapper := OrasCacheSettings{}
 	settings := Settings{}
+	defaultSettings := getDefaultSettings()
 
 	// Do we have debug mode on?
 	debug := false
@@ -234,12 +238,10 @@ func NewOrasCacheSettings(annotations map[string]string) *OrasCacheSettings {
 			// TODO double check this does not alter default settings
 			wrapper.MarkedForOras = true
 
-			// Add a regular or list value
+			// Add a regular or list value, and update default Settings so we retrieve next time
 			if parsed.IsList {
-				if defaultSetting.Values == nil {
-					defaultSetting.Values = []string{}
-				}
 				defaultSetting.Values = append(defaultSetting.Values, value)
+				defaultSettings[parsed.Field] = defaultSetting
 			} else {
 				defaultSetting.Value = value
 			}
@@ -247,6 +249,7 @@ func NewOrasCacheSettings(annotations map[string]string) *OrasCacheSettings {
 		}
 	}
 	wrapper.Settings = settings
+	wrapper.DefaultSettings = defaultSettings
 	if debug {
 		wrapper.PrintSettings()
 	}
