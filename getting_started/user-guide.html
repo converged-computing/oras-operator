@@ -662,14 +662,67 @@ $ helm pull oci://ghcr.io/converged-computing/oras-operator-helm/chart
 </code></pre></div>
 </div>
 <h3 id="annotations">Annotations<a class="headerlink" href="#annotations" title="Link to this heading">¶</a></h3>
-<p>The Oras Operator works by way of deploying an ORAS (OCI Registry as Storage) Registry to a namespace, and then the workflow tool can add annotations to pods to control how artifacts are cached (retrieved and saved for subsequent steps).
-In that most workflow tools understand inputs and outputs and the DAG, this should be feasible to do. Annotations and their defaults include:</p>
+<p>The Oras Operator works by way of deploying an ORAS (OCI Registry as Storage) Registry to a namespace, and then the workflow tool can add annotations to pods or jobs to control how artifacts are cached (retrieved and saved for subsequent steps).
+In that most workflow tools understand inputs and outputs and the DAG, this should be feasible to do. Here are example annotations for pods and jobs, first a pod:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><code><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Pod</span>
+<span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v1</span>
+<span class="nt">metadata</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hello-world-1</span>
+<span class="w">  </span><span class="nt">annotations</span><span class="p">:</span>
+<span class="w">     </span><span class="c1"># the name of the cache for the workflow, the name from oras.yaml</span>
+<span class="w">     </span><span class="nt">oras.converged-computing.github.io/oras-cache</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">orascache-sample</span>
+
+<span class="w">     </span><span class="c1"># This is how to ask for more than one input to be extracted to the same place</span>
+<span class="w">     </span><span class="nt">oras.converged-computing.github.io/input-uri</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">dinosaur/hello-world:input</span>
+<span class="w">     </span><span class="nt">oras.converged-computing.github.io/output-uri</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">dinosaur/hello-world:output</span>
+
+<span class="w">     </span><span class="c1"># Print all final settings in the log</span>
+<span class="w">     </span><span class="nt">oras.converged-computing.github.io/debug</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;true&quot;</span>
+</code></pre></div>
+</div>
+<p>The above is very simplistic, and will expect to prepare the workspace (the working directory or “input-path” annotation of the application container) with an extraction of
+the “input-uri” annotation. Here is an example with a job:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><code><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">batch/v1</span>
+<span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Job</span>
+<span class="nt">metadata</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">breakfast</span>
+<span class="w">  </span><span class="nt">annotations</span><span class="p">:</span>
+<span class="w">    </span><span class="c1"># the name of the cache for the workflow, the name from oras.yaml</span>
+<span class="w">    </span><span class="nt">oras.converged-computing.github.io/oras-cache</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">orascache-sample</span>
+
+<span class="w">    </span><span class="c1"># The URI for the workflow artifact output. Tag is important here - a steo</span>
+<span class="w">    </span><span class="c1"># in a dag would need to also include input-uri and push/pull based on dag</span>
+<span class="w">    </span><span class="nt">oras.converged-computing.github.io/output-uri</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">dinosaur/hello-world:pancakes</span>
+
+<span class="w">    </span><span class="c1"># Dummy example to use hello-world.txt touched in working directory</span>
+<span class="w">    </span><span class="nt">oras.converged-computing.github.io/output-path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pancakes.txt</span>
+
+<span class="w">    </span><span class="c1"># Pipe output to this path</span>
+<span class="w">    </span><span class="nt">oras.converged-computing.github.io/output-pipe</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pancakes.txt</span>
+
+<span class="w">    </span><span class="c1"># Print all final settings in the log</span>
+<span class="w">    </span><span class="nt">oras.converged-computing.github.io/debug</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;true&quot;</span>
+
+<span class="nt">spec</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">template</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">spec</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">containers</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">breakfast</span>
+<span class="w">        </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">perl:5.34.0</span>
+<span class="w">        </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">echo</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">blueberry</span><span class="p p-Indicator">]</span>
+<span class="w">      </span><span class="nt">restartPolicy</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Never</span>
+</code></pre></div>
+</div>
+<p>Note that the annotation above is on the level of the job, and will be carried forward to edit the JobTemplateSpec (without adding the annotations again).
+We do this to ensure that the operator isn’t triggered twice. E.g., if you were to put the annotations on the Pod template spec, it might trigger adding the sidecar
+once, first for the job, and then for the underlying pod(s) it creates. Annotations and their defaults include:</p>
 <table border="1" class="docutils">
 <thead>
 <tr>
 <th>Name</th>
 <th>Description</th>
 <th>Required</th>
+<th>List</th>
 <th>Default</th>
 </tr>
 </thead>
@@ -678,11 +731,13 @@ In that most workflow tools understand inputs and outputs and the DAG, this shou
 <td>input-path</td>
 <td>The path in the container that any requested archive is expected to be extracted to</td>
 <td>false</td>
+<td>false</td>
 <td>the working directory of the application container</td>
 </tr>
 <tr>
 <td>output-path</td>
 <td>The output path in the container to save files</td>
+<td>false</td>
 <td>false</td>
 <td>the working directory of the application container</td>
 </tr>
@@ -690,17 +745,20 @@ In that most workflow tools understand inputs and outputs and the DAG, this shou
 <td>output-pipe</td>
 <td>Pipe the output of your command into this file</td>
 <td>false</td>
+<td>false</td>
 <td>unset</td>
 </tr>
 <tr>
 <td>input-uri</td>
 <td>The input unique resource identifier for the registry step, including repository, name, and tag</td>
 <td>false</td>
+<td>true</td>
 <td>NA will be used if not defined, meaning the step has no inputs</td>
 </tr>
 <tr>
 <td>output-uri</td>
 <td>The output unique resource identifier for the registry step, including repository, name, and tag</td>
+<td>false</td>
 <td>false</td>
 <td>NA will be used if not defined, meaning the step has no outputs</td>
 </tr>
@@ -708,11 +766,13 @@ In that most workflow tools understand inputs and outputs and the DAG, this shou
 <td>oras-cache</td>
 <td>The name of the sidecar orchestrator</td>
 <td>false</td>
+<td>false</td>
 <td>oras</td>
 </tr>
 <tr>
 <td>oras-container</td>
 <td>The container with oras to run for the service</td>
+<td>false</td>
 <td>false</td>
 <td>ghcr.io/oras-project/oras:v1.1.0</td>
 </tr>
@@ -720,11 +780,13 @@ In that most workflow tools understand inputs and outputs and the DAG, this shou
 <td>container</td>
 <td>The name of the launcher container</td>
 <td>false</td>
+<td>false</td>
 <td>assumes the first container found requires the launcher</td>
 </tr>
 <tr>
 <td>entrypoint</td>
 <td>The https address of the application entrypoint to wget</td>
+<td>false</td>
 <td>false</td>
 <td><a href="https://raw.githubusercontent.com/converged-computing/oras-operator/main/hack/entrypoint.sh">entrypoint.sh</a></td>
 </tr>
@@ -732,25 +794,43 @@ In that most workflow tools understand inputs and outputs and the DAG, this shou
 <td>oras-entrypoint</td>
 <td>The https address of the oras cache sidecar entrypoint to wget</td>
 <td>false</td>
+<td>false</td>
 <td><a href="https://raw.githubusercontent.com/converged-computing/oras-operator/main/hack/oras-entrypoint.sh">oras-entrypoint.sh</a></td>
 </tr>
 <tr>
 <td>debug</td>
 <td>Print all discovered settings in the operator log</td>
 <td>false</td>
+<td>false</td>
 <td>"false"</td>
 </tr>
 </tbody>
 </table>
 <p>There should not be a need to change the oras-cache (sidecar container) unless for some reason you have another container in the pod also called oras. It is exposed for this rare case.</p>
+<p>Note that when List is true, this means the annotation can be provided as a list, and more than one value can be added with the pattern <code class="docutils literal notranslate"><span class="pre">&lt;prefix&gt;/&lt;field&gt;_&lt;count&gt;</span></code>. Currently the only supported list field is <code class="docutils literal notranslate"><span class="pre">input-uri</span></code>, anticipating that multiple parent steps might feed into one child step.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><code><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Pod</span>
+<span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v1</span>
+<span class="nt">metadata</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hello-world-3</span>
+<span class="w">  </span><span class="nt">annotations</span><span class="p">:</span>
+<span class="w">     </span><span class="c1"># the name of the cache for the workflow, the name from oras.yaml</span>
+<span class="w">     </span><span class="nt">oras.converged-computing.github.io/oras-cache</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">orascache-sample</span>
+
+<span class="w">     </span><span class="c1"># This is how to ask for more than one input to be extracted to the same place</span>
+<span class="w">     </span><span class="nt">oras.converged-computing.github.io/input-uri_1</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">dinosaur/hello-world:one</span>
+<span class="w">     </span><span class="nt">oras.converged-computing.github.io/input-uri_2</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">dinosaur/hello-world:two</span>
+
+<span class="w">     </span><span class="c1"># Print all final settings in the log</span>
+<span class="w">     </span><span class="nt">oras.converged-computing.github.io/debug</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;true&quot;</span>
+</code></pre></div>
+</div>
 <p>Currently not supported (but will be soon / if needed):</p>
 <ul class="simple">
-<li><p>An ability to save specific (single) files or groups of files. It’s much easier to target a directory so we are taking that approach to start.</p></li>
-<li><p>A target of the mutating admission webhook for job or jobset instead of pod. The pod target might not scale, but Job has a better chance.</p></li>
 <li><p>More than one launcher container in a pod</p></li>
 </ul>
 <p>Note that while the above can be set manually, the expectation is that a workflow tool will do it. For each of the <code class="docutils literal notranslate"><span class="pre">input-path</span></code> and <code class="docutils literal notranslate"><span class="pre">output-path</span></code> we recommend providing
-specific files or directories, and note that if one is not set we use the working directory, which (if this is the root of the container) will result in an error.</p>
+specific files or directories, and note that if one is not set we use the working directory, which (if this is the root of the container) will result in an error.
+In the case that no output-path is specified, we assume there is nothing to copy (and you should not set output-uri).</p>
 <h2 id="getting-started">Getting Started<a class="headerlink" href="#getting-started" title="Link to this heading">¶</a></h2>
 <p>You’ll need a Kubernetes cluster to run against. You can use <a class="reference external" href="https://sigs.k8s.io/kind">KIND</a> to get a local cluster for testing, or run against a remote cluster.
 <strong>Note:</strong> Your controller will automatically use the current context in your kubeconfig file (i.e. whatever cluster <code class="docutils literal notranslate"><span class="pre">kubectl</span> <span class="pre">cluster-info</span></code> shows). Create the cluster:</p>
@@ -785,7 +865,7 @@ and likely we will add more detail as we develop them.</p>
   <small>
     
       Last update:
-      Nov 07, 2023
+      Nov 09, 2023
     
   </small>
 </div>
