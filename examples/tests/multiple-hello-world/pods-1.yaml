@@ -1,0 +1,53 @@
+kind: Pod
+apiVersion: v1
+metadata:
+  name: hello-world-1
+  annotations:
+     # the name of the cache for the workflow, the name from oras.yaml
+     oras.converged-computing.github.io/oras-cache: orascache-sample
+
+     # The URI for the workflow artifact output. Tag is important here - a steo
+     # in a dag would need to also include input-uri and push/pull based on dag
+     oras.converged-computing.github.io/output-uri: dinosaur/hello-world:one
+
+     # Dummy example to use hello-world.txt touched in working directory
+     oras.converged-computing.github.io/output-path: hello-world-1.txt
+
+     # Print all final settings in the log
+     oras.converged-computing.github.io/debug: "true"
+     oras.converged-computing.github.io/oras-entrypoint: https://raw.githubusercontent.com/converged-computing/oras-operator/9d5892c8f8d933db991e64df52853ea97395e30e/hack/oras-entrypoint.sh
+
+
+spec:
+  containers:
+    - name: my-container
+      image: ubuntu
+
+      # Touch this file to be pushed to an artifact for the next step
+      command: [ "touch", "hello-world-1.txt" ]
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: hello-world-2
+  annotations:
+     # the name of the cache for the workflow, the name from oras.yaml
+     oras.converged-computing.github.io/oras-cache: orascache-sample
+
+     # The URI for the workflow artifact output. Tag is important here - a steo
+     # in a dag would need to also include input-uri and push/pull based on dag
+     oras.converged-computing.github.io/output-uri: dinosaur/hello-world:two
+
+     # Dummy example to use hello-world.txt touched in working directory
+     oras.converged-computing.github.io/output-path: hello-world-2.txt
+
+     # Print all final settings in the log
+     oras.converged-computing.github.io/debug: "true"
+     oras.converged-computing.github.io/oras-entrypoint: https://raw.githubusercontent.com/converged-computing/oras-operator/9d5892c8f8d933db991e64df52853ea97395e30e/hack/oras-entrypoint.sh
+spec:
+  containers:
+    - name: my-container
+      image: ubuntu
+
+      # Touch this file to be pushed to an artifact for the next step
+      command: [ "touch", "hello-world-2.txt" ]

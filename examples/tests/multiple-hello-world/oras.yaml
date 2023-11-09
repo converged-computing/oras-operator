@@ -1,0 +1,7 @@
+apiVersion: cache.converged-computing.github.io/v1alpha1
+kind: OrasCache
+metadata:
+  name: orascache-sample
+spec:
+  # We can use all the defaults here (this is a default)
+  image: ghcr.io/oras-project/registry:latest

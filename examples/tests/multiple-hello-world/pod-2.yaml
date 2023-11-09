@@ -1,0 +1,24 @@
+kind: Pod
+apiVersion: v1
+metadata:
+  name: hello-world-3
+  annotations:
+     # the name of the cache for the workflow, the name from oras.yaml
+     oras.converged-computing.github.io/oras-cache: orascache-sample
+
+     # This is how to ask for more than one input to be extracted to the same place
+     oras.converged-computing.github.io/input-uri_1: dinosaur/hello-world:one
+     oras.converged-computing.github.io/input-uri_2: dinosaur/hello-world:two
+
+     # Print all final settings in the log
+     oras.converged-computing.github.io/debug: "true"
+     oras.converged-computing.github.io/oras-entrypoint: https://raw.githubusercontent.com/converged-computing/oras-operator/support-multiple-inputs/hack/oras-entrypoint.sh
+     oras.converged-computing.github.io/entrypoint: https://raw.githubusercontent.com/converged-computing/oras-operator/support-multiple-inputs/hack/entrypoint.sh
+
+spec:
+  containers:
+    - name: my-container
+      image: ubuntu
+
+      # Touch this file to be pushed to an artifact for the next step
+      command: [ "ls", "inputs" ]
