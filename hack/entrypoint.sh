@@ -31,9 +31,9 @@ ls /mnt/oras
 # We expect to be in the working directory needed for the container
 # The artifact inputs can either be extracted here, or elsewhere
 if [[ "${artifactInput}" == "NA" ]]; then
-    cp -R /mnt/oras/inputs/ .
+    cp -R /mnt/oras/inputs/* .
 else
-    cp -R /mnt/oras/inputs/ ${artifactInput}
+    cp -R /mnt/oras/inputs/* ${artifactInput}
 fi
 
 # Run the original command
