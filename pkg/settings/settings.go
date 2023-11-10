@@ -24,7 +24,7 @@ func getDefaultSettings() map[string]OrasCacheSetting {
 
 		// Input and output container URIs for input/output artifacts
 		// The input URI can be a listing (pulling from one or more dependnecy steps)
-		"input-uri":  {Required: false, NonEmpty: true, Listing: true, Values: []string{}},
+		"input-uri":  {Required: false, NonEmpty: true, Value: defaults.DefaultMissing, Listing: true, Values: []string{}},
 		"output-uri": {Required: false, NonEmpty: true, Value: defaults.DefaultMissing},
 
 		// The name of the sidecar orchestrator
@@ -152,7 +152,9 @@ func (s *OrasCacheSettings) getDefaultListSetting(name string) []string {
 // PrintSettings print all settings if debug mode is on
 func (s *OrasCacheSettings) PrintSettings() {
 	for name, setting := range s.Settings {
-		if setting.Listing {
+		if setting.Listing && setting.Value != "" {
+			logger.Infof("🌟️ %s: %s", name, setting.Value)
+		} else if setting.Listing {
 			logger.Infof("🌟️ %s: %s", name, strings.Join(setting.Values, "\n"))
 		} else {
 			logger.Infof("🌟️ %s: %s", name, setting.Value)
@@ -193,7 +195,8 @@ func (s *OrasCacheSettings) Validate() bool {
 			logger.Warnf("The %s/%s is empty, and cannot be.", defaults.OrasCachePrefix, key)
 			return false
 		}
-		if ds.NonEmpty && ds.Listing && len(setting.Values) == 0 {
+		// A listing can also be provided as a single value
+		if ds.NonEmpty && ds.Listing && len(setting.Values) == 0 && setting.Value == "" {
 			logger.Warnf("The %s/%s is empty, and cannot be.", defaults.OrasCachePrefix, key)
 			return false
 		}
@@ -240,9 +243,13 @@ func NewOrasCacheSettings(annotations map[string]string) *OrasCacheSettings {
 
 			// Add a regular or list value, and update default Settings so we retrieve next time
 			if parsed.IsList {
+				logger.Infof("Setting %s is a list.", key)
 				defaultSetting.Values = append(defaultSetting.Values, value)
 				defaultSettings[parsed.Field] = defaultSetting
+
+				// It's a list, but we were given a value (e.g., input-uri)
 			} else {
+				logger.Infof("Setting %s is not a list.", key)
 				defaultSetting.Value = value
 			}
 			settings[parsed.Field] = defaultSetting
