@@ -243,13 +243,11 @@ func NewOrasCacheSettings(annotations map[string]string) *OrasCacheSettings {
 
 			// Add a regular or list value, and update default Settings so we retrieve next time
 			if parsed.IsList {
-				logger.Infof("Setting %s is a list.", key)
 				defaultSetting.Values = append(defaultSetting.Values, value)
 				defaultSettings[parsed.Field] = defaultSetting
 
 				// It's a list, but we were given a value (e.g., input-uri)
 			} else {
-				logger.Infof("Setting %s is not a list.", key)
 				defaultSetting.Value = value
 			}
 			settings[parsed.Field] = defaultSetting
