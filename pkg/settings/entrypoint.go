@@ -36,7 +36,14 @@ func (s *OrasCacheSettings) GetOrasEntrypoint(namespace string) string {
 
 	// Do we have nothing to pull from?
 	if len(pullFromURI) == 0 {
-		pullFrom = "NA"
+
+		// The pullFromURI can still be a single value
+		pullFrom = s.Get("input-uri")
+		if pullFrom != "NA" {
+			pullFrom = fmt.Sprintf("%s/%s", registry, pullFrom)
+		}
+		logger.Infof("final pull from is %s", pullFrom)
+
 	} else {
 		// Add all uris to the list
 		for _, uri := range pullFromURI {
