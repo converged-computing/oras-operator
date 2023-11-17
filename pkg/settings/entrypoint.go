@@ -54,12 +54,20 @@ func (s *OrasCacheSettings) GetOrasEntrypoint(namespace string) string {
 	if pushToURI != "NA" {
 		pushTo = fmt.Sprintf("%s/%s", registry, pushToURI)
 	}
+	unpack := s.Get("unpack")
 
 	// Ensure we have wget
-	orasEntrypoint := fmt.Sprintf("%s wget --no-cache -O %s %s && chmod +x %s && ./%s %s %s", updates, n, orasScript, n, n, pushTo, pullFrom)
+	orasEntrypoint := fmt.Sprintf("%s wget --no-cache -O %s %s && chmod +x %s && ./%s %s %s %s",
+		updates,
+		n,
+		orasScript,
+		n, n,
+		pushTo,
+		unpack,
+		pullFrom,
+	)
 	logger.Infof("Oras entrypoint: %s\n", orasEntrypoint)
 	return orasEntrypoint
-
 }
 
 func (s *OrasCacheSettings) GetApplicationEntrypoint(cmd string) string {
