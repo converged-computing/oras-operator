@@ -39,6 +39,9 @@ func getDefaultSettings() map[string]OrasCacheSetting {
 		// The name(s) of the launcher containers
 		"container": {Required: false, NonEmpty: true},
 
+		// Unpack .tar.gz via "io.deis.oras.content.unpack" annotation
+		"unpack": {Required: false, NonEmpty: true, Value: "true"},
+
 		// Entrypoint custom script to wget
 		"entrypoint":      {Required: false, NonEmpty: true, Value: defaults.ApplicationEntrypoint},
 		"oras-entrypoint": {Required: false, NonEmpty: true, Value: defaults.OrasEntrypoint},

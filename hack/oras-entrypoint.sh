@@ -7,12 +7,17 @@ echo "Full provided set of arguments are $@"
 pushto="${1}"
 shift
 
+# unpack
+unpack="${1}"
+shift
+
 # We will get an unknown number of inputs
 pullfrom="${1}"
 shift
 
 echo "Artifact URI to push to is: ${pushto}"
 echo "Artifact URI to pull from is: ${pullfrom}"
+echo "Unpack is ${unpack}"
 
 # Create inputs artifact directory
 mkdir -p /mnt/oras/inputs /mnt/oras/outputs
@@ -49,6 +54,14 @@ fi
 	
 # Push the contents to the location
 cd /mnt/oras/outputs
-oras push ${pushto} --plain-http .
 
+if [[ "unpack" == "true" ]]; then
+    oras push ${pushto} --plain-http .
+else
+# Write the annotation file that sets unpack to false
+cat <<EOF > ./annotations.json
+{".": {"io.deis.oras.content.unpack": "false"}}
+EOF
+oras push --annotation-file ./annotations.json ${pushto} --plain-http .
+fi
 # Now we are done and can exit
