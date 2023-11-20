@@ -153,6 +153,7 @@ once, first for the job, and then for the underlying pod(s) it creates. Annotati
 | entrypoint | The https address of the application entrypoint to wget | false | false | [entrypoint.sh](https://raw.githubusercontent.com/converged-computing/oras-operator/main/hack/entrypoint.sh) |
 | oras-entrypoint | The https address of the oras cache sidecar entrypoint to wget | false | false | [oras-entrypoint.sh](https://raw.githubusercontent.com/converged-computing/oras-operator/main/hack/oras-entrypoint.sh) |
 | debug | Print all discovered settings in the operator log | false | false | "false" |
+| unpack | Unpack a directory compressed to .tar.gz | false | false | "true" |
 
 There should not be a need to change the oras-cache (sidecar container) unless for some reason you have another container in the pod also called oras. It is exposed for this rare case.
 
