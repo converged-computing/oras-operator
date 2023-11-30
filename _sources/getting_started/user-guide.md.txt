@@ -149,6 +149,8 @@ once, first for the job, and then for the underlying pod(s) it creates. Annotati
 | output-uri | The output unique resource identifier for the registry step, including repository, name, and tag | false | false |NA will be used if not defined, meaning the step has no outputs |
 | oras-cache | The name of the sidecar orchestrator | false | false | oras |
 | oras-container | The container with oras to run for the service | false | false | ghcr.io/oras-project/oras:v1.1.0 |
+| registry | A custom remote registry URI for all containers | false | false | unset |
+| oras-env | A secret in the same namespace to add to the sidecar | false | false | unset |
 | container | The name of the launcher container | false | false | assumes the first container found requires the launcher |
 | entrypoint | The https address of the application entrypoint to wget | false | false | [entrypoint.sh](https://raw.githubusercontent.com/converged-computing/oras-operator/main/hack/entrypoint.sh) |
 | oras-entrypoint | The https address of the oras cache sidecar entrypoint to wget | false | false | [oras-entrypoint.sh](https://raw.githubusercontent.com/converged-computing/oras-operator/main/hack/oras-entrypoint.sh) |
@@ -156,8 +158,29 @@ once, first for the job, and then for the underlying pod(s) it creates. Annotati
 | unpack | Unpack a directory compressed to .tar.gz | false | false | "true" |
 
 There should not be a need to change the oras-cache (sidecar container) unless for some reason you have another container in the pod also called oras. It is exposed for this rare case.
+More details about specific annotations are provided below.
 
-Note that when List is true, this means the annotation can be provided as a list, and more than one value can be added with the pattern `<prefix>/<field>_<count>`. Currently the only supported list field is `input-uri`, anticipating that multiple parent steps might feed into one child step.
+#### Registry
+
+By default, the URIs that are provided are prefixed with the registry that the ORAS Operator has deployed on the same cluster. However, if registry is supplied, 
+it is assumed to be used for the entire job or pod definition, and this registry is used instead. If you absolutely don't need the local registry you can
+set "deploy" to false in the operator CRD (and it will be skipped). Also note that if you are pushing to a remote registry, you'll need to provide
+the name of a secret with your login and password via `oras-env`, discussed next.
+
+#### oras-env
+
+This should be the name of a secret in the same namespace as your pod or job that has one or more secrets to add to the environment. As an example to create such a secret:
+
+```bash
+kubectl create secret generic oras-env --from-literal="ORAS_USER=${ORAS_USER}" --from-literal="ORAS_PUSH_PASS=${ORAS_PASS}" --from-literal="ORAS_PULL_PASS=${ORAS_PASS}"
+```
+The most common use case here is to provide credentials for pushing or pulling to a remote registry (when deploy is false). We provide the same credential twice for pull and push because it could
+be the case that you only want to add for one or the other, and in fact adding to a command that doesn't require it could result in an error. The secret must be in the same namespace
+as your job or pod.
+
+#### Multiple input-uri
+
+Note that when List is true, this means the annotation can be provided as a list, and more than one value can be added with the pattern `<prefix>/<field>_<count>`. Currently the only supported list field is `input-uri`, anticipating that multiple parent steps might feed into one child step. Here is an example with multiple input uris.
 
 ```yaml
 kind: Pod
@@ -215,6 +238,7 @@ kubectl logs -n oras-operator-system oras-operator-controller-manager-ff66845dd-
 You can then try one of the [examples](https://github.com/converged-computing/oras-operator/tree/main/examples) in the repository. A brief description of each is provided here,
 and likely we will add more detail as we develop them.
 
- - [tests/registry](https://github.com/converged-computing/oras-operator/tree/main/examples/tests/registry/roas.yaml): a basic example of creating an ORAS registry cache
+ - [registry](https://github.com/converged-computing/oras-operator/tree/main/examples/registry): demonstrates interaction with a remote registry and disable of a local (namespaced) deployment
+ - [tests/registry](https://github.com/converged-computing/oras-operator/tree/main/examples/tests/registry/oras.yaml): a basic example of creating an ORAS registry cache
  - [tests/hello-world](https://github.com/converged-computing/oras-operator/tree/main/examples/tests/hello-world): Writing one "hello-world" output and saving to an ORAS registry cache
  - [workflows/metrics](https://github.com/converged-computing/oras-operator/tree/main/examples/woirkflow/metrics): Running two Metrics Operator apps/metrics (LAMMPS and HWLOC) and getting results for each!

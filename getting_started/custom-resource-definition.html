@@ -452,9 +452,36 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#secret" class="md-nav__link">
-    <span title="/getting_started/custom-resource-definition.md#secret (reference label)" class="md-ellipsis">secret</span>
+  <a href="#deploy" class="md-nav__link">
+    <span title="/getting_started/custom-resource-definition.md#deploy (reference label)" class="md-ellipsis">deploy</span>
   </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#secrets" class="md-nav__link">
+    <span title="/getting_started/custom-resource-definition.md#secrets (reference label)" class="md-ellipsis">secrets</span>
+  </a>
+  
+    <nav class="md-nav" aria-label="secrets">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#orasenv" class="md-nav__link">
+    <span title="/getting_started/custom-resource-definition.md#orasenv (reference label)" class="md-ellipsis">oras<wbr>Env</span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#registryhttp" class="md-nav__link">
+    <span title="/getting_started/custom-resource-definition.md#registryhttp (reference label)" class="md-ellipsis">registry<wbr>Http</span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -609,11 +636,29 @@ Here is what that might look like (reproducing the default):</p>
 <span class="w">  </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ghcr.io/oras-project/registry:latest</span>
 </code></pre></div>
 </div>
-<h4 id="secret">secret<a class="headerlink" href="#secret" title="Link to this heading">¶</a></h4>
-<p>In the case of deploying more than one registry, the push secret can be customized.</p>
+<h4 id="deploy">deploy<a class="headerlink" href="#deploy" title="Link to this heading">¶</a></h4>
+<p>If deploy is set to false, this indicates that you don’t want the operator to deploy a stateful set local registry.
+This means that you’ll need to provide all jobs / pods with a remote <code class="docutils literal notranslate"><span class="pre">registry</span></code> field to replace it, and (likely) a secret to pull or push.
+See <a class="reference internal" href="#orasenv"><span class="std std-ref">orasEnv</span></a> below for details.</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><code><span class="nt">spec</span><span class="p">:</span>
-<span class="w">  </span><span class="c1"># We can use all the defaults here (this is a default)</span>
-<span class="w">  </span><span class="nt">secret</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mysecret</span>
+<span class="w">  </span><span class="nt">deploy</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w"> </span>
+</code></pre></div>
+</div>
+<h4 id="secrets">secrets<a class="headerlink" href="#secrets" title="Link to this heading">¶</a></h4>
+<p>There are several secrets that can be added, if needed.</p>
+<h5 id="orasenv">orasEnv<a class="headerlink" href="#orasenv" title="Link to this heading">¶</a></h5>
+<p>If you deploy a secret to the namespace that you want the ORAS operator to use (providing in the environment to the pod)
+you can define the name here.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><code><span class="nt">spec</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">secrets</span><span class="p">:</span><span class="w"> </span>
+<span class="w">    </span><span class="nt">orasEnv</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mysecret-name</span>
+</code></pre></div>
+</div>
+<h5 id="registryhttp">registryHttp<a class="headerlink" href="#registryhttp" title="Link to this heading">¶</a></h5>
+<p>In the case of deploying more than one registry pod (not supported yet), the push secret can be customized.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><code><span class="nt">spec</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">secrets</span><span class="p">:</span><span class="w"> </span>
+<span class="w">    </span><span class="nt">registryHttp</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mysecret</span>
 </code></pre></div>
 </div>
 <p>Note that this is not supported yet - likely we would want to add custom volumes (for shared storage) between more than one pod in the stateful set.
@@ -625,7 +670,7 @@ For now we just need to save small amounts of data and will add this functionali
   <small>
     
       Last update:
-      Nov 20, 2023
+      Nov 30, 2023
     
   </small>
 </div>

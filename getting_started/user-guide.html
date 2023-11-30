@@ -453,6 +453,33 @@
     <span title="/getting_started/user-guide.md#annotations (reference label)" class="md-ellipsis">Annotations</span>
   </a>
   
+    <nav class="md-nav" aria-label="Annotations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#registry" class="md-nav__link">
+    <span title="/getting_started/user-guide.md#registry (reference label)" class="md-ellipsis">Registry</span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#oras-env" class="md-nav__link">
+    <span title="/getting_started/user-guide.md#oras-env (reference label)" class="md-ellipsis">oras-<wbr>env</span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multiple-input-uri" class="md-nav__link">
+    <span title="/getting_started/user-guide.md#multiple-input-uri (reference label)" class="md-ellipsis">Multiple input-<wbr>uri</span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
       </ul>
@@ -777,6 +804,20 @@ once, first for the job, and then for the underlying pod(s) it creates. Annotati
 <td>ghcr.io/oras-project/oras:v1.1.0</td>
 </tr>
 <tr>
+<td>registry</td>
+<td>A custom remote registry URI for all containers</td>
+<td>false</td>
+<td>false</td>
+<td>unset</td>
+</tr>
+<tr>
+<td>oras-env</td>
+<td>A secret in the same namespace to add to the sidecar</td>
+<td>false</td>
+<td>false</td>
+<td>unset</td>
+</tr>
+<tr>
 <td>container</td>
 <td>The name of the launcher container</td>
 <td>false</td>
@@ -813,8 +854,23 @@ once, first for the job, and then for the underlying pod(s) it creates. Annotati
 </tr>
 </tbody>
 </table>
-<p>There should not be a need to change the oras-cache (sidecar container) unless for some reason you have another container in the pod also called oras. It is exposed for this rare case.</p>
-<p>Note that when List is true, this means the annotation can be provided as a list, and more than one value can be added with the pattern <code class="docutils literal notranslate"><span class="pre">&lt;prefix&gt;/&lt;field&gt;_&lt;count&gt;</span></code>. Currently the only supported list field is <code class="docutils literal notranslate"><span class="pre">input-uri</span></code>, anticipating that multiple parent steps might feed into one child step.</p>
+<p>There should not be a need to change the oras-cache (sidecar container) unless for some reason you have another container in the pod also called oras. It is exposed for this rare case.
+More details about specific annotations are provided below.</p>
+<h4 id="registry">Registry<a class="headerlink" href="#registry" title="Link to this heading">¶</a></h4>
+<p>By default, the URIs that are provided are prefixed with the registry that the ORAS Operator has deployed on the same cluster. However, if registry is supplied,
+it is assumed to be used for the entire job or pod definition, and this registry is used instead. If you absolutely don’t need the local registry you can
+set “deploy” to false in the operator CRD (and it will be skipped). Also note that if you are pushing to a remote registry, you’ll need to provide
+the name of a secret with your login and password via <code class="docutils literal notranslate"><span class="pre">oras-env</span></code>, discussed next.</p>
+<h4 id="oras-env">oras-env<a class="headerlink" href="#oras-env" title="Link to this heading">¶</a></h4>
+<p>This should be the name of a secret in the same namespace as your pod or job that has one or more secrets to add to the environment. As an example to create such a secret:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>create<span class="w"> </span>secret<span class="w"> </span>generic<span class="w"> </span>oras-env<span class="w"> </span>--from-literal<span class="o">=</span><span class="s2">&quot;ORAS_USER=</span><span class="si">${</span><span class="nv">ORAS_USER</span><span class="si">}</span><span class="s2">&quot;</span><span class="w"> </span>--from-literal<span class="o">=</span><span class="s2">&quot;ORAS_PUSH_PASS=</span><span class="si">${</span><span class="nv">ORAS_PASS</span><span class="si">}</span><span class="s2">&quot;</span><span class="w"> </span>--from-literal<span class="o">=</span><span class="s2">&quot;ORAS_PULL_PASS=</span><span class="si">${</span><span class="nv">ORAS_PASS</span><span class="si">}</span><span class="s2">&quot;</span>
+</code></pre></div>
+</div>
+<p>The most common use case here is to provide credentials for pushing or pulling to a remote registry (when deploy is false). We provide the same credential twice for pull and push because it could
+be the case that you only want to add for one or the other, and in fact adding to a command that doesn’t require it could result in an error. The secret must be in the same namespace
+as your job or pod.</p>
+<h4 id="multiple-input-uri">Multiple input-uri<a class="headerlink" href="#multiple-input-uri" title="Link to this heading">¶</a></h4>
+<p>Note that when List is true, this means the annotation can be provided as a list, and more than one value can be added with the pattern <code class="docutils literal notranslate"><span class="pre">&lt;prefix&gt;/&lt;field&gt;_&lt;count&gt;</span></code>. Currently the only supported list field is <code class="docutils literal notranslate"><span class="pre">input-uri</span></code>, anticipating that multiple parent steps might feed into one child step. Here is an example with multiple input uris.</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><code><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Pod</span>
 <span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v1</span>
 <span class="nt">metadata</span><span class="p">:</span>
@@ -861,7 +917,8 @@ kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> <
 <p>You can then try one of the <a class="reference external" href="https://github.com/converged-computing/oras-operator/tree/main/examples">examples</a> in the repository. A brief description of each is provided here,
 and likely we will add more detail as we develop them.</p>
 <ul class="simple">
-<li><p><a class="reference external" href="https://github.com/converged-computing/oras-operator/tree/main/examples/tests/registry/roas.yaml">tests/registry</a>: a basic example of creating an ORAS registry cache</p></li>
+<li><p><a class="reference external" href="https://github.com/converged-computing/oras-operator/tree/main/examples/registry">registry</a>: demonstrates interaction with a remote registry and disable of a local (namespaced) deployment</p></li>
+<li><p><a class="reference external" href="https://github.com/converged-computing/oras-operator/tree/main/examples/tests/registry/oras.yaml">tests/registry</a>: a basic example of creating an ORAS registry cache</p></li>
 <li><p><a class="reference external" href="https://github.com/converged-computing/oras-operator/tree/main/examples/tests/hello-world">tests/hello-world</a>: Writing one “hello-world” output and saving to an ORAS registry cache</p></li>
 <li><p><a class="reference external" href="https://github.com/converged-computing/oras-operator/tree/main/examples/woirkflow/metrics">workflows/metrics</a>: Running two Metrics Operator apps/metrics (LAMMPS and HWLOC) and getting results for each!</p></li>
 </ul>
@@ -872,7 +929,7 @@ and likely we will add more detail as we develop them.</p>
   <small>
     
       Last update:
-      Nov 20, 2023
+      Nov 30, 2023
     
   </small>
 </div>
