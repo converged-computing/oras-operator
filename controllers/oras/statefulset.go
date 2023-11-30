@@ -120,13 +120,28 @@ func (r *OrasCacheReconciler) createStatefulSet(
 		},
 	}
 
+	// Prepare environment variables
 	// Do we have a secret?
-	if spec.Spec.Secret != "" {
-		env := []corev1.EnvVar{{
+	if spec.Spec.Secrets.RegistryHttp != "" {
+		env := []corev1.EnvVar{}
+		env = append(env, corev1.EnvVar{
 			Name:  "REGISTRY_HTTP_SECRET",
-			Value: spec.Spec.Secret,
-		}}
+			Value: spec.Spec.Secrets.RegistryHttp,
+		})
 		set.Spec.Template.Spec.Containers[0].Env = env
+	}
+
+	// Are we also adding environment variables from a secret?
+	if spec.Spec.Secrets.OrasEnv != "" {
+		set.Spec.Template.Spec.Containers[0].EnvFrom = []v1.EnvFromSource{
+			{
+				SecretRef: &corev1.SecretEnvSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: spec.Spec.Secrets.OrasEnv,
+					},
+				},
+			},
+		}
 	}
 
 	// Controller reference always needs to be set before creation

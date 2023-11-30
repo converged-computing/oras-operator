@@ -1,0 +1,30 @@
+kind: Pod
+apiVersion: v1
+metadata:
+  name: turkey-pod
+  annotations:
+     # the name of the cache for the workflow, the name from oras.yaml
+     oras.converged-computing.github.io/oras-cache: orascache-sample
+
+     # The URI for the workflow artifact output. Tag is important here - a steo
+     # in a dag would need to also include input-uri and push/pull based on dag
+     oras.converged-computing.github.io/output-uri: manbat/metrics-operator-results:test
+
+     # This says to use ghcr.io (and we expect credentials) instead of the local registry
+     oras.converged-computing.github.io/registry: ghcr.io
+
+     # We get the name of the push/pull secrets (in the same namespace) here for the environment
+     oras.converged-computing.github.io/oras-env: oras-env
+
+     # Dummy example to use hello-world.txt touched in working directory
+     oras.converged-computing.github.io/output-path: hello-world.txt
+
+     # Print all final settings in the log
+     oras.converged-computing.github.io/debug: "true"
+spec:
+  containers:
+    - name: my-container
+      image: ubuntu
+
+      # Touch this file to be pushed to an artifact for the next step
+      command: [ "touch", "hello-world.txt" ]

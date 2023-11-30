@@ -2,6 +2,7 @@
 # Binaries for programs and plugins
 ./vendor
 *.exe
+.env
 *.exe~
 *.dll
 *.so
