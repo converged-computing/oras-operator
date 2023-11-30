@@ -107,9 +107,12 @@ func (r *OrasCacheReconciler) ensureOrasCache(
 	}
 
 	// The service running the oras registry is a stateful set
-	_, result, _, err = r.getStatefulSet(ctx, spec)
-	if err != nil {
-		return result, err
+	// But only deploy if we are requested to!
+	if spec.Spec.Deploy {
+		_, result, _, err = r.getStatefulSet(ctx, spec)
+		if err != nil {
+			return result, err
+		}
 	}
 	return ctrl.Result{}, nil
 }

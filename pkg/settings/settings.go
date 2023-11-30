@@ -35,9 +35,12 @@ func getDefaultSettings() map[string]OrasCacheSetting {
 
 		// The container with oras to run for the service
 		"oras-container": {Required: true, Value: defaults.OrasBaseImage},
+		"oras-env":       {Required: false, NonEmpty: true},
 
-		// The name(s) of the launcher containers
+		// The name(s) of the launcher containers, and a different (remote registry)
+		// If a registry is provided, a local one is not deployed
 		"container": {Required: false, NonEmpty: true},
+		"registry":  {Required: false, NonEmpty: true},
 
 		// Unpack .tar.gz via "io.deis.oras.content.unpack" annotation
 		"unpack": {Required: false, NonEmpty: true, Value: "true"},

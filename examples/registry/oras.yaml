@@ -1,0 +1,6 @@
+apiVersion: cache.converged-computing.github.io/v1alpha1
+kind: OrasCache
+metadata:
+  name: oras
+spec:
+  deploy: false

@@ -53,13 +53,25 @@ spec:
           spec:
             description: OrasCacheSpec defines the desired state of OrasCache
             properties:
+              deploy:
+                description: Skip deploying the registry (stateful set) implying all references are for a remote (existing) registry
+                type: boolean
               image:
                 default: ghcr.io/oras-project/registry:latest
                 description: Image is the oras registry to deploy
                 type: string
-              secret:
-                description: Secret for the registry REGISTRY_HTTP_SECRET
-                type: string
+              secrets:
+                description: Names of secrets for the operator
+                properties:
+                  orasEnv:
+                    description: Secrets for the environment for the ORAS operator sidecar pod to push e.g., oras pull -u username -p password myregistry.io/myimage:latest This should have ORAS_USER and ORAS_PASS
+                    type: string
+                  registryHttp:
+                    description: Secret for the registry REGISTRY_HTTP_SECRET
+                    type: string
+                type: object
+            required:
+            - deploy
             type: object
           status:
             description: OrasCacheStatus defines the observed state of OrasCache

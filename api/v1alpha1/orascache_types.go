@@ -23,9 +23,26 @@ type OrasCacheSpec struct {
 	// +optional
 	Image string `json:"image"`
 
+	// Names of secrets for the operator
+	// +optional
+	Secrets Secrets `json:"secrets"`
+
+	// Skip deploying the registry (stateful set) implying all references
+	// are for a remote (existing) registry
+	Deploy bool `json:"deploy"`
+}
+
+type Secrets struct {
+
+	// Secrets for the environment for the ORAS operator sidecar pod to push
+	// e.g., oras pull -u username -p password myregistry.io/myimage:latest
+	// This should have ORAS_USER and ORAS_PASS
+	// +optional
+	OrasEnv string `json:"orasEnv"`
+
 	// Secret for the registry REGISTRY_HTTP_SECRET
 	// +optional
-	Secret string `json:"secret"`
+	RegistryHttp string `json:"registryHttp"`
 }
 
 // OrasCacheStatus defines the observed state of OrasCache

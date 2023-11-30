@@ -20,9 +20,12 @@ func (s *OrasCacheSettings) GetOrasEntrypoint(namespace string) string {
 
 	orasScript := s.Get("oras-entrypoint")
 	cacheName := s.Get("oras-cache")
+	registry := s.Get("registry")
 
 	// This is a stateful set so we assume always index 0. Assume same port for now
-	registry := fmt.Sprintf("%s-0.%s.%s.svc.cluster.local:5000", cacheName, cacheName, namespace)
+	if registry == "" {
+		registry = fmt.Sprintf("%s-0.%s.%s.svc.cluster.local:5000", cacheName, cacheName, namespace)
+	}
 
 	// This is a list because we can pull more than one input
 	pullFromURI := s.GetList("input-uri")

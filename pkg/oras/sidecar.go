@@ -14,6 +14,7 @@ import (
 	"github.com/converged-computing/oras-operator/pkg/defaults"
 	orasSettings "github.com/converged-computing/oras-operator/pkg/settings"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 // Exit early if we don't have the launcher
@@ -60,6 +61,21 @@ func AddSidecar(
 		WorkingDir:   defaults.OrasMountPath,
 	}
 	spec.Subdomain = cacheName
+
+	// If we have a secret to add with credentials, do it here
+	// Are we also adding environment variables from a secret?
+	orasEnv := settings.Get("oras-env")
+	if orasEnv != "" {
+		sidecar.EnvFrom = []v1.EnvFromSource{
+			{
+				SecretRef: &corev1.SecretEnvSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: orasEnv,
+					},
+				},
+			},
+		}
+	}
 
 	// Add volume with emptyDir to the pod
 	if spec.Volumes == nil {
