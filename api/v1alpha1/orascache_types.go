@@ -29,6 +29,9 @@ type OrasCacheSpec struct {
 
 	// Skip deploying the registry (stateful set) implying all references
 	// are for a remote (existing) registry
+	// +kubebuilder:default=true
+	// +default=true
+	// +optional
 	Deploy bool `json:"deploy"`
 }
 

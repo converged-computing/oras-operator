@@ -54,6 +54,7 @@ spec:
             description: OrasCacheSpec defines the desired state of OrasCache
             properties:
               deploy:
+                default: true
                 description: Skip deploying the registry (stateful set) implying all references are for a remote (existing) registry
                 type: boolean
               image:
@@ -70,8 +71,6 @@ spec:
                     description: Secret for the registry REGISTRY_HTTP_SECRET
                     type: string
                 type: object
-            required:
-            - deploy
             type: object
           status:
             description: OrasCacheStatus defines the observed state of OrasCache
