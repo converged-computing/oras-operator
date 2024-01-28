@@ -54,6 +54,19 @@ spec:
   deploy: false 
 ```
 
+#### service
+
+There are a few handles to customize the service, namely to not create it (e.g., if you are adding to an existing service) or to customize the name.
+
+```yaml
+spec:
+  service:
+    name: my-custom-name
+    create: false
+```
+
+In the above, we would ask the operator to not create the service, and to instead use "my-custom-name."
+
 #### secrets
 
 There are several secrets that can be added, if needed.

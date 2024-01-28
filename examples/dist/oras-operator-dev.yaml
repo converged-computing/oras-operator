@@ -71,6 +71,16 @@ spec:
                     description: Secret for the registry REGISTRY_HTTP_SECRET
                     type: string
                 type: object
+              service:
+                description: Customization for the headless service
+                properties:
+                  create:
+                    description: Skip creating the service if set to false This is useful if you are wanting to add the registry to an existing service
+                    type: boolean
+                  name:
+                    description: The name for the headless service
+                    type: string
+                type: object
             type: object
           status:
             description: OrasCacheStatus defines the observed state of OrasCache

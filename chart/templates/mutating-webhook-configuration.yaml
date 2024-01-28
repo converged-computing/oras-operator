@@ -13,16 +13,19 @@ webhooks:
     service:
       name: '{{ include "chart.fullname" . }}-webhook-service'
       namespace: '{{ .Release.Namespace }}'
-      path: /mutate--v1-pod
+      path: /mutate-v1-sidecar
   failurePolicy: Fail
   name: morascache.kb.io
   rules:
   - apiGroups:
     - ""
+    - core
+    - batch
     apiVersions:
     - v1
     operations:
     - CREATE
     resources:
     - pods
+    - jobs
   sideEffects: None

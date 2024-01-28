@@ -32,7 +32,7 @@ controllerManager:
         - ALL
     image:
       repository: ghcr.io/converged-computing/oras-operator
-      tag: latest
+      tag: test
     imagePullPolicy: Always
     resources:
       limits:

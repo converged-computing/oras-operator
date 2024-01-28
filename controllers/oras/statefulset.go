@@ -84,6 +84,12 @@ func (r *OrasCacheReconciler) createStatefulSet(
 		"Name:", spec.Name,
 	)
 
+	// The headless service selector is either the Namespace, or a custom one we've provided
+	serviceName := spec.Name
+	if spec.Spec.Service.Name != "" {
+		serviceName = spec.Spec.Service.Name
+	}
+
 	// start with one registry for now
 	var replicas int32 = 1
 	labels := map[string]string{
@@ -115,7 +121,7 @@ func (r *OrasCacheReconciler) createStatefulSet(
 					// RestartPolicy defaults to Always
 				},
 			},
-			ServiceName: spec.Name,
+			ServiceName: serviceName,
 			// Default UpdateStrategy is RollingUpdate
 		},
 	}

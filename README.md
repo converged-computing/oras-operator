@@ -12,7 +12,6 @@ Deploy an ORAS registry (cache for workflow or experiment artifacts) as a servic
 - test with a simple dag (maybe snakemake kueue executor)
 - multiple pods for registry and using secret / shared storage use case
 
-
 ## License
 
 HPCIC DevTools is distributed under the terms of the MIT license.
