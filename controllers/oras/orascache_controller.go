@@ -98,18 +98,21 @@ func (r *OrasCacheReconciler) ensureOrasCache(
 	spec *api.OrasCache,
 ) (ctrl.Result, error) {
 
-	// Create headless service for the API to use
+	// Create headless service for the API to use only if requested
 	// This must be created before the stateful set
-	selector := map[string]string{defaults.OrasSelectorKey: spec.Namespace}
-	result, err := r.exposeServices(ctx, spec, selector)
-	if err != nil {
-		return result, err
+	if spec.Spec.Service.Create {
+		selector := map[string]string{defaults.OrasSelectorKey: spec.Namespace}
+		result, err := r.exposeServices(ctx, spec, selector)
+		if err != nil {
+			return result, err
+		}
+
 	}
 
 	// The service running the oras registry is a stateful set
 	// But only deploy if we are requested to!
 	if spec.Spec.Deploy {
-		_, result, _, err = r.getStatefulSet(ctx, spec)
+		_, result, _, err := r.getStatefulSet(ctx, spec)
 		if err != nil {
 			return result, err
 		}

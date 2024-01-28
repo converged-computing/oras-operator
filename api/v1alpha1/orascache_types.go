@@ -27,12 +27,29 @@ type OrasCacheSpec struct {
 	// +optional
 	Secrets Secrets `json:"secrets"`
 
+	// Customization for the headless service
+	// +optional
+	Service Service `json:"service"`
+
 	// Skip deploying the registry (stateful set) implying all references
 	// are for a remote (existing) registry
 	// +kubebuilder:default=true
 	// +default=true
 	// +optional
 	Deploy bool `json:"deploy"`
+}
+
+type Service struct {
+
+	// The name for the headless service
+	// +optional
+	Name string `json:"name"`
+
+	// Skip creating the service if set to false
+	// This is useful if you are wanting to add the registry to an existing service
+	// +default=true
+	// +optional
+	Create bool `json:"create"`
 }
 
 type Secrets struct {
